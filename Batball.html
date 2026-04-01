@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BatBall - Breakout</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+    }
+
+    .game-wrap {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background: linear-gradient(180deg, #0b0b17 0%, #1a1a1f 100%);
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: #1f1f1f;
+      cursor: none;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(180deg, rgba(10,10,20,0.97), rgba(8,8,14,0.98));
+      z-index: 10;
+      padding: 24px;
+    }
+
+    .screen.hidden {
+      display: none;
+    }
+
+    .start-box {
+      width: min(940px, 94%);
+      color: #ececec;
+    }
+
+    .start-title {
+      text-align: center;
+      font-size: 5.2rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 56px;
+      color: #f2f2f2;
+    }
+
+    .instructions {
+      max-width: 860px;
+      margin: 0 auto;
+      font-size: 1.18rem;
+      line-height: 1.6;
+      font-weight: 700;
+      color: #d9d9d9;
+    }
+
+    .instructions h2 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      color: #efefef;
+    }
+
+    .instructions p {
+      margin: 4px 0;
+    }
+
+    .start-row {
+      margin-top: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 34px;
+      flex-wrap: wrap;
+    }
+
+    .start-text {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #dcdcdc;
+    }
+
+    .big-btn {
+      border: 2px solid #202020;
+      background: #efefef;
+      color: #111;
+      font-size: 1.1rem;
+      font-weight: 800;
+      border-radius: 18px;
+      min-width: 300px;
+      height: 72px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    }
+
+    .big-btn:hover {
+      filter: brightness(0.98);
+    }
+
+    .gameover-screen {
+      position: absolute;
+      inset: 0;
+      z-index: 12;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.38);
+      padding: 20px;
+    }
+
+    .gameover-screen.show {
+      display: flex;
+    }
+
+    .gameover-box {
+      text-align: center;
+      color: white;
+      width: min(700px, 94%);
+    }
+
+    .gameover-title {
+      font-size: 5rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+      color: rgba(255,255,255,0.96);
+    }
+
+    .gameover-subtitle {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #d7d7d7;
+      margin-bottom: 44px;
+    }
+
+    .stack-buttons {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 22px;
+      margin-bottom: 70px;
+    }
+
+    .replay-btn,
+    .quit-btn {
+      width: 300px;
+      height: 72px;
+      border-radius: 18px;
+      border: 2px solid rgba(0,0,0,0.18);
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .replay-btn {
+      background: #efc86d;
+      color: #111;
+    }
+
+    .quit-btn {
+      background: #efefef;
+      color: #111;
+    }
+
+    .mini-bat {
+      width: 180px;
+      height: 24px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.35);
+    }
+
+    @media (max-width: 900px) {
+      .start-title,
+      .gameover-title {
+        font-size: 3.2rem;
+      }
+
+      .instructions {
+        font-size: 1rem;
+      }
+
+      .big-btn,
+      .replay-btn,
+      .quit-btn {
+        width: 240px;
+        height: 62px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-wrap">
+    <canvas id="gameCanvas" width="1200" height="800"></canvas>
+
+    <div id="startScreen" class="screen">
+      <div class="start-box">
+        <div class="start-title">BREAKOUT</div>
+
+        <div class="instructions">
+          <h2>Instructions:</h2>
+          <p>- Move bat with LEFT / RIGHT arrows</p>
+          <p>- Or move the mouse to control the bat</p>
+          <p>- Break the special MB block and catch the power-up for multi-ball</p>
+          <p>- The ball gets faster every time it hits something</p>
+          <p>- Clear all blocks to complete the level</p>
+          <p>- You have limited lives (all balls falling below = lose a life)</p>
+          <p>- ESC returns to the start screen</p>
+
+          <div class="start-row">
+            <div class="start-text">Press ENTER or click Start</div>
+            <button id="startBtn" class="big-btn" type="button">Start</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="gameOverScreen" class="gameover-screen">
+      <div class="gameover-box">
+        <div id="gameOverTitle" class="gameover-title">GAME OVER</div>
+        <div id="gameOverSubtitle" class="gameover-subtitle">Click Replay to return to the start screen</div>
+
+        <div class="stack-buttons">
+          <button id="replayBtn" class="replay-btn" type="button">Replay</button>
+          <button id="quitBtn" class="quit-btn" type="button">Quit</button>
+        </div>
+
+        <div class="mini-bat"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const startScreen = document.getElementById("startScreen");
+    const gameOverScreen = document.getElementById("gameOverScreen");
+    const startBtn = document.getElementById("startBtn");
+    const replayBtn = document.getElementById("replayBtn");
+    const quitBtn = document.getElementById("quitBtn");
+    const gameOverTitle = document.getElementById("gameOverTitle");
+    const gameOverSubtitle = document.getElementById("gameOverSubtitle");
+
+    const WIDTH = canvas.width;
+    const HEIGHT = canvas.height;
+
+    let gameState = "start";
+    let level = 1;
+    const maxLevels = 4;
+    let lives = 3;
+
+    let leftPressed = false;
+    let rightPressed = false;
+
+    const bat = {
+      width: 190,
+      height: 18,
+      x: WIDTH / 2 - 95,
+      y: HEIGHT - 72,
+      speed: 10,
+      color: "#efefef"
+    };
+
+    let balls = [];
+    let blocks = [];
+    let powerUps = [];
+
+    const blockWidth = 104;
+    const blockHeight = 34;
+    const blockGap = 14;
+    const topOffset = 82;
+    const leftOffset = 34;
+
+    const SPEED_BOOST = 1.04;
+    const MAX_BALL_SPEED = 14;
+
+    const levelLayouts = [
+      [
+        "1111111111",
+        "1111111111",
+        "1111111111",
+        "0111111110",
+        "1011111101"
+      ],
+      [
+        "1111111111",
+        "0111111110",
+        "0011111100",
+        "0111111110",
+        "1111111111"
+      ],
+      [
+        "1100110011",
+        "1111111111",
+        "0111111110",
+        "1111111111",
+        "1100110011"
+      ],
+      [
+        "1111111111",
+        "1011111101",
+        "1111111111",
+        "1011111101",
+        "1111111111"
+      ]
+    ];
+
+    const rowColors = ["#5da2ea", "#5da2ea", "#77cf88", "#77cf88", "#f1c45e"];
+
+    function makeBall(x = WIDTH / 2, y = HEIGHT - 110, dx = 4.2, dy = -4.5) {
+      return {
+        x,
+        y,
+        radius: 12,
+        dx,
+        dy,
+        color: "#f4b64c",
+        active: true
+      };
+    }
+
+    function getBallSpeed(ball) {
+      return Math.hypot(ball.dx, ball.dy);
+    }
+
+    function increaseBallSpeed(ball) {
+      const currentSpeed = getBallSpeed(ball);
+      const newSpeed = Math.min(MAX_BALL_SPEED, currentSpeed * SPEED_BOOST);
+
+      if (currentSpeed === 0) return;
+
+      const scale = newSpeed / currentSpeed;
+      ball.dx *= scale;
+      ball.dy *= scale;
+    }
+
+    function resetBallOnBat() {
+      balls = [makeBall(bat.x + bat.width / 2, bat.y - 18, 4.2, -4.5)];
+    }
+
+    function choosePowerupBlock() {
+      const aliveIndexes = [];
+      for (let i = 0; i < blocks.length; i++) {
+        if (blocks[i].alive) aliveIndexes.push(i);
+      }
+      if (aliveIndexes.length === 0) return;
+      const chosen = aliveIndexes[Math.floor(Math.random() * aliveIndexes.length)];
+      blocks[chosen].hasPowerup = true;
+    }
+
+    function buildBlocksForLevel(levelNumber) {
+      blocks = [];
+      powerUps = [];
+
+      const layout = levelLayouts[levelNumber - 1];
+
+      for (let row = 0; row < layout.length; row++) {
+        for (let col = 0; col < layout[row].length; col++) {
+          if (layout[row][col] !== "1") continue;
+
+          const x = leftOffset + col * (blockWidth + blockGap);
+          const y = topOffset + row * (blockHeight + blockGap);
+
+          blocks.push({
+            x,
+            y,
+            width: blockWidth,
+            height: blockHeight,
+            color: rowColors[row] || "#5da2ea",
+            alive: true,
+            hasPowerup: false
+          });
+        }
+      }
+
+      choosePowerupBlock();
+    }
+
+    function resetWholeGame() {
+      level = 1;
+      lives = 3;
+      bat.x = WIDTH / 2 - bat.width / 2;
+      buildBlocksForLevel(level);
+      resetBallOnBat();
+      gameOverScreen.classList.remove("show");
+    }
+
+    function startGame() {
+      resetWholeGame();
+      gameState = "playing";
+      startScreen.classList.add("hidden");
+      gameOverScreen.classList.remove("show");
+    }
+
+    function backToStart() {
+      gameState = "start";
+      startScreen.classList.remove("hidden");
+      gameOverScreen.classList.remove("show");
+      resetWholeGame();
+      draw();
+    }
+
+    function showEndScreen(titleText, subtitleText) {
+      gameOverTitle.textContent = titleText;
+      gameOverSubtitle.textContent = subtitleText;
+      gameOverScreen.classList.add("show");
+    }
+
+    function nextLevel() {
+      if (level < maxLevels) {
+        level += 1;
+        bat.x = WIDTH / 2 - bat.width / 2;
+        buildBlocksForLevel(level);
+        resetBallOnBat();
+      } else {
+        gameState = "win";
+        showEndScreen("YOU WIN", "You cleared all levels. Click Replay to play again");
+      }
+    }
+
+    function loseLife() {
+      lives -= 1;
+
+      if (lives <= 0) {
+        gameState = "gameover";
+        showEndScreen("GAME OVER", "Click Replay to return to the start screen");
+      } else {
+        bat.x = WIDTH / 2 - bat.width / 2;
+        powerUps = [];
+        resetBallOnBat();
+      }
+    }
+
+    function spawnPowerup(x, y) {
+      powerUps.push({
+        x,
+        y,
+        width: 44,
+        height: 22,
+        speed: 2.6,
+        active: true,
+        label: "MB"
+      });
+    }
+
+    function activateMultiball() {
+      if (balls.length === 0) {
+        balls.push(makeBall(bat.x + bat.width / 2, bat.y - 18, 4.2, -4.5));
+      }
+
+      const baseBall = balls[0];
+      const x = baseBall ? baseBall.x : bat.x + bat.width / 2;
+      const y = baseBall ? baseBall.y : bat.y - 18;
+
+      balls.push(makeBall(x, y, -4.8, -4.4));
+      balls.push(makeBall(x, y, 4.9, -4.8));
+    }
+
+    function getAliveBlocks() {
+      return blocks.filter(block => block.alive);
+    }
+
+    function updateBat() {
+      if (leftPressed) bat.x -= bat.speed;
+      if (rightPressed) bat.x += bat.speed;
+
+      if (bat.x < 0) bat.x = 0;
+      if (bat.x + bat.width > WIDTH) bat.x = WIDTH - bat.width;
+    }
+
+    function updatePowerups() {
+      for (const item of powerUps) {
+        if (!item.active) continue;
+
+        item.y += item.speed;
+
+        if (
+          item.y + item.height >= bat.y &&
+          item.y <= bat.y + bat.height &&
+          item.x + item.width >= bat.x &&
+          item.x <= bat.x + bat.width
+        ) {
+          item.active = false;
+          activateMultiball();
+        }
+
+        if (item.y > HEIGHT + 30) {
+          item.active = false;
+        }
+      }
+
+      powerUps = powerUps.filter(item => item.active);
+    }
+
+    function updateBalls() {
+      for (const ball of balls) {
+        if (!ball.active) continue;
+
+        ball.x += ball.dx;
+        ball.y += ball.dy;
+
+        if (ball.x - ball.radius <= 0) {
+          ball.x = ball.radius;
+          ball.dx *= -1;
+          increaseBallSpeed(ball);
+        }
+
+        if (ball.x + ball.radius >= WIDTH) {
+          ball.x = WIDTH - ball.radius;
+          ball.dx *= -1;
+          increaseBallSpeed(ball);
+        }
+
+        if (ball.y - ball.radius <= 52) {
+          ball.y = 52 + ball.radius;
+          ball.dy *= -1;
+          increaseBallSpeed(ball);
+        }
+
+        if (
+          ball.y + ball.radius >= bat.y &&
+          ball.y - ball.radius <= bat.y + bat.height &&
+          ball.x + ball.radius >= bat.x &&
+          ball.x - ball.radius <= bat.x + bat.width &&
+          ball.dy > 0
+        ) {
+          ball.y = bat.y - ball.radius;
+
+          const speed = Math.min(MAX_BALL_SPEED, getBallSpeed(ball) * SPEED_BOOST);
+          const hit = (ball.x - (bat.x + bat.width / 2)) / (bat.width / 2);
+
+          ball.dx = hit * 7.4;
+          ball.dy = -Math.abs(ball.dy);
+
+          const currentSpeed = getBallSpeed(ball);
+          if (currentSpeed > 0) {
+            const scale = speed / currentSpeed;
+            ball.dx *= scale;
+            ball.dy *= scale;
+          }
+        }
+
+        for (const block of blocks) {
+          if (!block.alive) continue;
+
+          if (
+            ball.x + ball.radius > block.x &&
+            ball.x - ball.radius < block.x + block.width &&
+            ball.y + ball.radius > block.y &&
+            ball.y - ball.radius < block.y + block.height
+          ) {
+            block.alive = false;
+
+            const overlapLeft = ball.x + ball.radius - block.x;
+            const overlapRight = block.x + block.width - (ball.x - ball.radius);
+            const overlapTop = ball.y + ball.radius - block.y;
+            const overlapBottom = block.y + block.height - (ball.y - ball.radius);
+
+            const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+
+            if (minOverlap === overlapLeft || minOverlap === overlapRight) {
+              ball.dx *= -1;
+            } else {
+              ball.dy *= -1;
+            }
+
+            increaseBallSpeed(ball);
+
+            if (block.hasPowerup) {
+              spawnPowerup(block.x + block.width / 2 - 22, block.y + block.height / 2 - 11);
+            }
+
+            break;
+          }
+        }
+      }
+
+      balls = balls.filter(ball => ball.y - ball.radius <= HEIGHT + 30);
+
+      if (balls.length === 0 && gameState === "playing") {
+        loseLife();
+      }
+
+      if (getAliveBlocks().length === 0 && gameState === "playing") {
+        nextLevel();
+      }
+    }
+
+    function drawTopBar() {
+      ctx.fillStyle = "#222222";
+      ctx.fillRect(0, 0, WIDTH, 52);
+
+      ctx.fillStyle = "#d8d8d8";
+      ctx.font = "bold 22px Arial";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(
+        `LEVEL: ${level}/${maxLevels} | LIVES: ${lives} | Arrow Keys or Mouse | Catch MB for multi-ball`,
+        8,
+        26
+      );
+    }
+
+    function drawBlocks() {
+      for (const block of blocks) {
+        if (!block.alive) continue;
+
+        ctx.fillStyle = block.color;
+        ctx.fillRect(block.x, block.y, block.width, block.height);
+
+        if (block.hasPowerup) {
+          ctx.fillStyle = "rgba(255,255,255,0.22)";
+          ctx.fillRect(block.x + block.width - 26, block.y + 6, 18, 18);
+          ctx.fillStyle = "#111";
+          ctx.font = "bold 12px Arial";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("MB", block.x + block.width - 17, block.y + 15);
+        }
+      }
+    }
+
+    function drawBat() {
+      ctx.fillStyle = bat.color;
+      ctx.fillRect(bat.x, bat.y, bat.width, bat.height);
+    }
+
+    function drawBalls() {
+      for (const ball of balls) {
+        ctx.fillStyle = ball.color;
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawPowerups() {
+      for (const item of powerUps) {
+        ctx.fillStyle = "#ffda75";
+        ctx.fillRect(item.x, item.y, item.width, item.height);
+
+        ctx.fillStyle = "#111";
+        ctx.font = "bold 14px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(item.label, item.x + item.width / 2, item.y + item.height / 2 + 1);
+      }
+    }
+
+    function drawBackground() {
+      ctx.fillStyle = "#1f1f1f";
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    }
+
+    function draw() {
+      drawBackground();
+      drawTopBar();
+      drawBlocks();
+      drawPowerups();
+      drawBat();
+      drawBalls();
+    }
+
+    function gameLoop() {
+      if (gameState === "playing") {
+        updateBat();
+        updatePowerups();
+        updateBalls();
+      }
+
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    startBtn.addEventListener("click", startGame);
+    replayBtn.addEventListener("click", backToStart);
+    quitBtn.addEventListener("click", backToStart);
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        leftPressed = true;
+      }
+
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        rightPressed = true;
+      }
+
+      if (e.key === "Enter" && gameState === "start") {
+        e.preventDefault();
+        startGame();
+      }
+
+      if (e.key === "Escape") {
+        backToStart();
+      }
+
+      if (e.code === "Space") {
+        e.preventDefault();
+      }
+    });
+
+    document.addEventListener("keyup", (e) => {
+      if (e.key === "ArrowLeft") leftPressed = false;
+      if (e.key === "ArrowRight") rightPressed = false;
+    });
+
+    canvas.addEventListener("mousemove", (e) => {
+      if (gameState !== "playing") return;
+
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = WIDTH / rect.width;
+      const mouseX = (e.clientX - rect.left) * scaleX;
+
+      bat.x = mouseX - bat.width / 2;
+
+      if (bat.x < 0) bat.x = 0;
+      if (bat.x + bat.width > WIDTH) bat.x = WIDTH - bat.width;
+    });
+
+    resetWholeGame();
+    draw();
+    gameLoop();
+  </script>
+</body>
+</html>

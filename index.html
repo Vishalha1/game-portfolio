@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Game Hub Arcade</title>
+
+  <style>
+    :root {
+      --bg-1: #050816;
+      --bg-2: #0b1230;
+      --bg-3: #130a2e;
+
+      --text: #f7fbff;
+      --muted: #b7c6e7;
+
+      --cyan: #00e5ff;
+      --pink: #ff3cac;
+      --purple: #9b5cff;
+      --green: #39ff88;
+      --yellow: #ffd84d;
+      --red: #ff6b6b;
+
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.42);
+      --radius: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 10%, rgba(255, 60, 172, 0.22), transparent 22%),
+        radial-gradient(circle at 90% 20%, rgba(0, 229, 255, 0.20), transparent 22%),
+        radial-gradient(circle at 80% 80%, rgba(57, 255, 136, 0.14), transparent 20%),
+        linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 45%, var(--bg-3) 100%);
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 36px 36px;
+      opacity: 0.5;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      padding: 18px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 22px 26px;
+      border-radius: 30px;
+      background: linear-gradient(90deg, rgba(15, 18, 45, 0.95), rgba(6, 26, 66, 0.92));
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.04) inset,
+        0 0 22px rgba(0, 229, 255, 0.08),
+        0 0 36px rgba(255, 60, 172, 0.08),
+        var(--shadow);
+      margin-bottom: 20px;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .brand h1 {
+      font-size: 54px;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #ffffff;
+      text-shadow:
+        0 0 8px rgba(255,255,255,0.35),
+        0 0 18px rgba(0,229,255,0.28),
+        0 0 30px rgba(255,60,172,0.16);
+    }
+
+    .brand p {
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .fullscreen-btn,
+    .home-btn {
+      border: 1px solid rgba(255,255,255,0.16);
+      background: linear-gradient(135deg, #ffffff, #dce9ff);
+      color: #10203d;
+      font-weight: bold;
+      font-size: 15px;
+      padding: 14px 24px;
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow:
+        0 10px 24px rgba(0, 0, 0, 0.24),
+        0 0 16px rgba(255,255,255,0.12);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .fullscreen-btn:hover,
+    .home-btn:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow:
+        0 14px 28px rgba(0, 0, 0, 0.28),
+        0 0 18px rgba(255,255,255,0.22);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+      align-items: start;
+      flex: 1;
+    }
+
+    .sidebar,
+    .panel {
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(8, 16, 40, 0.92), rgba(5, 12, 28, 0.90));
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.03) inset,
+        0 0 24px rgba(0,229,255,0.06),
+        var(--shadow);
+    }
+
+    .sidebar {
+      padding: 24px 22px;
+      min-height: 680px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: #9fc7ff;
+      margin-bottom: 12px;
+      text-shadow: 0 0 10px rgba(0,229,255,0.18);
+    }
+
+    .sidebar h2 {
+      font-size: 50px;
+      line-height: 1;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      color: white;
+      text-shadow:
+        0 0 8px rgba(255,255,255,0.18),
+        0 0 18px rgba(155,92,255,0.18);
+    }
+
+    .sidebar p {
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 15px;
+      margin-bottom: 20px;
+    }
+
+    .game-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .game-btn {
+      width: 100%;
+      text-align: left;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 18px 16px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+      color: var(--text);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .game-btn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(0,229,255,0.06), rgba(255,60,172,0.08), rgba(57,255,136,0.05));
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .game-btn:hover {
+      transform: translateY(-3px) scale(1.01);
+      border-color: rgba(0,229,255,0.45);
+      box-shadow:
+        0 0 18px rgba(0,229,255,0.12),
+        0 0 22px rgba(255,60,172,0.08),
+        0 12px 24px rgba(0,0,0,0.28);
+    }
+
+    .game-btn:hover::before {
+      opacity: 1;
+    }
+
+    .game-btn[aria-current="page"] {
+      border-color: rgba(57,255,136,0.65);
+      box-shadow:
+        0 0 18px rgba(57,255,136,0.16),
+        0 0 28px rgba(0,229,255,0.10),
+        0 12px 26px rgba(0,0,0,0.30);
+      background: linear-gradient(135deg, rgba(57,255,136,0.12), rgba(0,229,255,0.10), rgba(155,92,255,0.10));
+    }
+
+    .game-btn strong,
+    .game-btn small {
+      position: relative;
+      z-index: 1;
+    }
+
+    .game-btn strong {
+      display: block;
+      font-size: 19px;
+      margin-bottom: 6px;
+      color: #ffffff;
+    }
+
+    .game-btn small {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .panel {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      min-height: 900px;
+    }
+
+    .panel-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      flex-shrink: 0;
+    }
+
+    .status-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .status-label {
+      color: var(--muted);
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+      padding: 11px 16px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      box-shadow: 0 0 16px rgba(57,255,136,0.06);
+    }
+
+    .status-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 14px var(--green);
+    }
+
+    .panel-note {
+      color: var(--muted);
+      font-size: 14px;
+      text-align: right;
+    }
+
+    .stage-shell {
+      border-radius: 26px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: linear-gradient(180deg, rgba(8, 14, 30, 0.98), rgba(4, 8, 22, 0.96));
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.03),
+        0 0 26px rgba(0,229,255,0.06);
+      display: flex;
+      flex-direction: column;
+      min-height: 980px;
+    }
+
+    .stage-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      flex-shrink: 0;
+    }
+
+    .stage-topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .stage-lights {
+      display: flex;
+      gap: 8px;
+    }
+
+    .stage-lights span {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 12px currentColor;
+    }
+
+    .light-red { background: var(--red); color: var(--red); }
+    .light-yellow { background: var(--yellow); color: var(--yellow); }
+    .light-green { background: var(--green); color: var(--green); }
+
+    .stage-badge {
+      padding: 8px 13px;
+      border-radius: 999px;
+      background: rgba(155,92,255,0.14);
+      color: #e2d5ff;
+      font-size: 13px;
+      font-weight: bold;
+      border: 1px solid rgba(155,92,255,0.28);
+      box-shadow: 0 0 14px rgba(155,92,255,0.12);
+    }
+
+    .stage-area {
+      position: relative;
+      min-height: 900px;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(0,229,255,0.10), transparent 22%),
+        radial-gradient(circle at 85% 15%, rgba(255,60,172,0.10), transparent 22%),
+        radial-gradient(circle at 80% 80%, rgba(57,255,136,0.08), transparent 18%),
+        linear-gradient(145deg, #081939 0%, #07142c 55%, #0d1240 100%);
+      overflow: hidden;
+      flex: 1;
+    }
+
+    #stage {
+      width: 100%;
+      height: 900px;
+      border: none;
+      display: none;
+      background: #000;
+      position: relative;
+      z-index: 1;
+    }
+
+    .placeholder {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 24px;
+      z-index: 2;
+    }
+
+    .placeholder-box {
+      max-width: 760px;
+      padding: 38px 28px;
+      border-radius: 28px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow:
+        0 0 26px rgba(0,229,255,0.07),
+        0 0 24px rgba(255,60,172,0.06),
+        0 20px 45px rgba(0,0,0,0.24);
+      backdrop-filter: blur(10px);
+    }
+
+    .placeholder-icon {
+      font-size: 56px;
+      margin-bottom: 16px;
+      text-shadow: 0 0 16px rgba(155,92,255,0.35);
+    }
+
+    .placeholder h3 {
+      font-size: 48px;
+      line-height: 1.08;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-shadow:
+        0 0 10px rgba(255,255,255,0.16),
+        0 0 20px rgba(0,229,255,0.10);
+    }
+
+    .placeholder p {
+      color: #d8e5ff;
+      font-size: 18px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .placeholder-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .placeholder-tags span {
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: bold;
+      color: #e6efff;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 0 12px rgba(0,229,255,0.05);
+    }
+
+    @media (max-width: 1100px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar h2 {
+        font-size: 40px;
+      }
+
+      .panel {
+        min-height: auto;
+      }
+
+      .stage-shell {
+        min-height: 760px;
+      }
+
+      .stage-area {
+        min-height: 700px;
+      }
+
+      #stage {
+        height: 700px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        padding: 12px;
+      }
+
+      .topbar {
+        padding: 18px;
+      }
+
+      .brand h1 {
+        font-size: 36px;
+      }
+
+      .brand p {
+        font-size: 14px;
+      }
+
+      .panel,
+      .sidebar {
+        padding: 18px;
+      }
+
+      .sidebar h2 {
+        font-size: 34px;
+      }
+
+      .placeholder h3 {
+        font-size: 30px;
+      }
+
+      .placeholder p {
+        font-size: 15px;
+      }
+
+      .stage-shell {
+        min-height: 620px;
+      }
+
+      .stage-area {
+        min-height: 560px;
+      }
+
+      #stage {
+        height: 560px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <h1>Game Hub</h1>
+        <p>Enter the arcade and launch your HTML games</p>
+      </div>
+
+      <div class="topbar-actions">
+        <button id="fullscreenBtn" class="fullscreen-btn" type="button">Full Screen</button>
+        <button id="homeBtn" class="home-btn" type="button">Home</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <span class="eyebrow">Insert Coin</span>
+        <h2>Arcade</h2>
+        <p>Pick a cabinet from the left and load it into the live arcade stage.</p>
+
+        <nav class="game-nav">
+          <button class="game-btn" type="button" data-path="./snake.html">
+            <strong>Snake</strong>
+            <small>Neon grid, rainbow glow, and faster speed as you eat more apples</small>
+          </button>
+
+          <button class="game-btn" type="button" data-path="./tetris.html">
+            <strong>Tetris</strong>
+            <small>Stack blocks, clear lines, and survive as the pace gets faster</small>
+          </button>
+
+          <button class="game-btn" type="button" data-path="./Batball.html">
+            <strong>BatBall</strong>
+            <small>Classic bat-and-ball action against the computer</small>
+          </button>
+
+          <button class="game-btn" type="button" data-path="./Alien_shooter.html">
+            <strong>Alien Shooter</strong>
+            <small>Blast enemies in a glowing sci-fi arcade battle</small>
+          </button>
+        </nav>
+      </aside>
+
+      <main class="panel">
+        <div class="panel-top">
+          <div class="status-wrap">
+            <span class="status-label">Now Playing</span>
+            <div class="status-pill">
+              <span class="status-dot"></span>
+              <span id="currentGame">None selected</span>
+            </div>
+          </div>
+
+          <div class="panel-note">
+            Choose a cabinet to launch it in the live arcade screen
+          </div>
+        </div>
+
+        <section class="stage-shell">
+          <div class="stage-topbar">
+            <div class="stage-topbar-left">
+              <div class="stage-lights">
+                <span class="light-red"></span>
+                <span class="light-yellow"></span>
+                <span class="light-green"></span>
+              </div>
+              <span>Arcade Screen</span>
+            </div>
+
+            <div class="stage-badge">HTML Arcade</div>
+          </div>
+
+          <div class="stage-area" id="stageArea">
+            <div id="placeholder" class="placeholder">
+              <div class="placeholder-box">
+                <div class="placeholder-icon">🕹️</div>
+                <h3>Choose a Game</h3>
+                <p>
+                  Step into the arcade and launch your game in the glowing live display.
+                  Your selected game will appear here inside the main cabinet screen.
+                </p>
+
+                <div class="placeholder-tags">
+                  <span>Neon Arcade</span>
+                  <span>Live Game Screen</span>
+                  <span>HTML Portfolio</span>
+                  <span>Retro Feel</span>
+                </div>
+              </div>
+            </div>
+
+            <iframe
+              id="stage"
+              title="Game display area"
+              src="about:blank"
+              loading="lazy"
+              scrolling="yes"
+            ></iframe>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const stage = document.getElementById("stage");
+    const currentGame = document.getElementById("currentGame");
+    const placeholder = document.getElementById("placeholder");
+    const homeBtn = document.getElementById("homeBtn");
+    const fullscreenBtn = document.getElementById("fullscreenBtn");
+    const gameButtons = document.querySelectorAll(".game-btn");
+
+    function formatTitle(path) {
+      return path
+        .replace("./", "")
+        .replace(".html", "")
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function loadGame(path, btn) {
+      stage.src = path;
+      stage.style.display = "block";
+      placeholder.style.display = "none";
+      currentGame.textContent = formatTitle(path);
+
+      gameButtons.forEach(button => button.removeAttribute("aria-current"));
+      btn.setAttribute("aria-current", "page");
+
+      setTimeout(() => {
+        stage.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
+    }
+
+    gameButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const path = btn.getAttribute("data-path");
+        loadGame(path, btn);
+      });
+    });
+
+    homeBtn.addEventListener("click", () => {
+      stage.src = "about:blank";
+      stage.style.display = "none";
+      placeholder.style.display = "grid";
+      currentGame.textContent = "None selected";
+      gameButtons.forEach(button => button.removeAttribute("aria-current"));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    async function toggleFullscreen() {
+      try {
+        if (!document.fullscreenElement) {
+          await document.documentElement.requestFullscreen();
+        } else {
+          await document.exitFullscreen();
+        }
+      } catch (error) {
+        console.error("Fullscreen error:", error);
+      }
+    }
+
+    function updateFullscreenButton() {
+      fullscreenBtn.textContent = document.fullscreenElement ? "Exit Full Screen" : "Full Screen";
+    }
+
+    fullscreenBtn.addEventListener("click", toggleFullscreen);
+    document.addEventListener("fullscreenchange", updateFullscreenButton);
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "f" || e.key === "F") {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+    });
+  </script>
+</body>
+</html>
