@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>3D Fruit Match-3</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #030816;
+      color: white;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+    }
+
+    .game-wrap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(0, 229, 255, 0.18), transparent 30%),
+        radial-gradient(circle at 80% 20%, rgba(255, 60, 172, 0.16), transparent 30%),
+        radial-gradient(circle at 50% 95%, rgba(57, 255, 136, 0.12), transparent 35%),
+        linear-gradient(135deg, #020617, #07142e, #17051f);
+    }
+
+    canvas {
+      display: block;
+      width: min(100vw, 100vh);
+      height: min(100vw, 100vh);
+      margin: auto;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .cover,
+    .game-over {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(0, 229, 255, 0.16), transparent 28%),
+        radial-gradient(circle at 80% 25%, rgba(255, 60, 172, 0.16), transparent 30%),
+        rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(8px);
+      z-index: 10;
+    }
+
+    .cover.hidden,
+    .game-over.hidden {
+      display: none;
+    }
+
+    .cover-box,
+    .game-over-box {
+      width: min(860px, 94vw);
+      text-align: center;
+      border-radius: 32px;
+      padding: 42px 34px;
+      background: linear-gradient(180deg, rgba(8, 14, 34, 0.94), rgba(3, 5, 20, 0.94));
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow:
+        0 0 28px rgba(0, 229, 255, 0.22),
+        0 0 58px rgba(255, 60, 172, 0.14),
+        0 28px 80px rgba(0, 0, 0, 0.48);
+    }
+
+    .cover-title {
+      font-size: clamp(46px, 8vw, 86px);
+      line-height: 0.95;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #ffffff;
+      margin-bottom: 14px;
+      text-shadow:
+        0 0 12px rgba(255, 255, 255, 0.42),
+        0 0 28px rgba(0, 229, 255, 0.42),
+        0 0 54px rgba(255, 60, 172, 0.26);
+    }
+
+    .cover-subtitle {
+      color: #dbe6ff;
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+
+    .fruit-row {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
+    .fruit-badge {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      font-size: 32px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 0 18px rgba(0, 229, 255, 0.08);
+    }
+
+    .instructions-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+      gap: 14px;
+      margin-bottom: 30px;
+    }
+
+    .instruction-card {
+      text-align: left;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .instruction-card strong {
+      display: block;
+      color: #39ff88;
+      font-size: 14px;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .instruction-card span {
+      display: block;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .start-btn,
+    .restart-btn,
+    .menu-btn {
+      border: none;
+      border-radius: 20px;
+      padding: 18px 32px;
+      min-width: 220px;
+      font-size: 20px;
+      font-weight: 900;
+      cursor: pointer;
+      color: #041226;
+      background: linear-gradient(135deg, #39ff88, #00e5ff);
+      box-shadow:
+        0 14px 28px rgba(0, 0, 0, 0.32),
+        0 0 26px rgba(57, 255, 136, 0.25);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .menu-btn {
+      background: linear-gradient(135deg, #ffffff, #dce9ff);
+    }
+
+    .start-btn:hover,
+    .restart-btn:hover,
+    .menu-btn:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow:
+        0 18px 34px rgba(0, 0, 0, 0.38),
+        0 0 32px rgba(0, 229, 255, 0.3);
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 26px;
+    }
+
+    .game-over-title {
+      font-size: clamp(44px, 8vw, 78px);
+      font-weight: 900;
+      margin-bottom: 16px;
+      text-shadow:
+        0 0 12px rgba(255, 255, 255, 0.36),
+        0 0 34px rgba(255, 60, 172, 0.36);
+    }
+
+    .game-over-text {
+      color: #dbe6ff;
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 760px) {
+      .instructions-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cover-box,
+      .game-over-box {
+        padding: 30px 22px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="game-wrap">
+    <canvas id="gameCanvas" width="900" height="900"></canvas>
+
+    <div id="cover" class="cover">
+      <div class="cover-box">
+        <h1 class="cover-title">Fruit Crush 3D</h1>
+
+        <p class="cover-subtitle">
+          Swap juicy 3D fruits, make matches, trigger combos, and beat your best score.
+        </p>
+
+        <div class="fruit-row">
+          <div class="fruit-badge">🍎</div>
+          <div class="fruit-badge">🍊</div>
+          <div class="fruit-badge">🍌</div>
+          <div class="fruit-badge">🍇</div>
+          <div class="fruit-badge">🍓</div>
+          <div class="fruit-badge">🍉</div>
+          <div class="fruit-badge">🫐</div>
+        </div>
+
+        <div class="instructions-grid">
+          <div class="instruction-card">
+            <strong>How to Play</strong>
+            <span>Click one fruit, then click a fruit next to it to swap.</span>
+          </div>
+
+          <div class="instruction-card">
+            <strong>Match</strong>
+            <span>Make 3 or more of the same fruit in a row or column.</span>
+          </div>
+
+          <div class="instruction-card">
+            <strong>Score</strong>
+            <span>Each matched fruit gives you points. Combos give big points.</span>
+          </div>
+
+          <div class="instruction-card">
+            <strong>Challenge</strong>
+            <span>Your score slowly drops over time, so move fast.</span>
+          </div>
+        </div>
+
+        <button id="startBtn" class="start-btn" type="button">Start Game</button>
+      </div>
+    </div>
+
+    <div id="gameOver" class="game-over hidden">
+      <div class="game-over-box">
+        <div class="game-over-title">GAME OVER</div>
+        <p id="finalText" class="game-over-text">Final Score: 0</p>
+
+        <div class="button-row">
+          <button id="restartBtn" class="restart-btn" type="button">Play Again</button>
+          <button id="menuBtn" class="menu-btn" type="button">Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const cover = document.getElementById("cover");
+    const gameOver = document.getElementById("gameOver");
+    const finalText = document.getElementById("finalText");
+    const startBtn = document.getElementById("startBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const menuBtn = document.getElementById("menuBtn");
+
+    const WIDTH = canvas.width;
+    const HEIGHT = canvas.height;
+
+    const BOARD_W = 8;
+    const BOARD_H = 8;
+    const TILE = 64;
+    const EMPTY = -1;
+    const NUM_FRUITS = 7;
+
+    const BOARD_PIXEL_W = BOARD_W * TILE;
+    const BOARD_PIXEL_H = BOARD_H * TILE;
+    const BOARD_X = (WIDTH - BOARD_PIXEL_W) / 2;
+    const BOARD_Y = 178;
+
+    const POINTS_PER_FRUIT = 10;
+    const SCORE_DEDUCT_SPEED = 60;
+
+    const HIGH_SCORE_KEY = "fruit_crush_3d_best_score";
+
+    let board = [];
+    let selected = null;
+    let matchedSet = new Set();
+
+    let score = 0;
+    let bestScore = Number(localStorage.getItem(HIGH_SCORE_KEY) || 0);
+    let deductCounter = 0;
+
+    let message = "Select your first fruit.";
+    let gameState = "cover";
+    let animating = false;
+
+    let particles = [];
+    let floatingTexts = [];
+    let stars = [];
+    let backgroundPulse = 0;
+
+    const FRUIT_NAMES = [
+      "Apple",
+      "Orange",
+      "Banana",
+      "Grapes",
+      "Strawberry",
+      "Watermelon",
+      "Blueberry"
+    ];
+
+    const FRUIT_COLORS = [
+      "#ff2d45",
+      "#ff9f1c",
+      "#ffd84d",
+      "#9b5cff",
+      "#ff3c6f",
+      "#39ff88",
+      "#4d8dff"
+    ];
+
+    function makeStars() {
+      stars = [];
+
+      for (let i = 0; i < 180; i++) {
+        stars.push({
+          x: Math.random() * WIDTH,
+          y: Math.random() * HEIGHT,
+          r: Math.random() * 1.8 + 0.4,
+          speed: Math.random() * 0.35 + 0.08,
+          alpha: Math.random() * 0.75 + 0.25
+        });
+      }
+    }
+
+    function getBlankBoard() {
+      const newBoard = [];
+
+      for (let x = 0; x < BOARD_W; x++) {
+        const col = [];
+
+        for (let y = 0; y < BOARD_H; y++) {
+          col.push(EMPTY);
+        }
+
+        newBoard.push(col);
+      }
+
+      return newBoard;
+    }
+
+    function copyBoard(source) {
+      return source.map(col => [...col]);
+    }
+
+    function canPlaceFruitHere(testBoard, x, y, fruit) {
+      if (x >= 2) {
+        if (testBoard[x - 1][y] === fruit && testBoard[x - 2][y] === fruit) {
+          return false;
+        }
+      }
+
+      if (y >= 2) {
+        if (testBoard[x][y - 1] === fruit && testBoard[x][y - 2] === fruit) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    function fillBoardWithRandomFruits(testBoard) {
+      for (let x = 0; x < BOARD_W; x++) {
+        for (let y = 0; y < BOARD_H; y++) {
+          const choices = shuffle([...Array(NUM_FRUITS).keys()]);
+
+          for (const fruit of choices) {
+            if (canPlaceFruitHere(testBoard, x, y, fruit)) {
+              testBoard[x][y] = fruit;
+              break;
+            }
+          }
+        }
+      }
+
+      return testBoard;
+    }
+
+    function getRandomBoard() {
+      return fillBoardWithRandomFruits(getBlankBoard());
+    }
+
+    function getFreshPlayableBoard() {
+      let attempts = 0;
+
+      while (attempts < 100) {
+        const newBoard = getRandomBoard();
+
+        if (canMakeMove(newBoard)) {
+          return newBoard;
+        }
+
+        attempts++;
+      }
+
+      return getRandomBoard();
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+
+      return array;
+    }
+
+    function findMatchingFruits(testBoard) {
+      const matches = new Set();
+
+      for (let y = 0; y < BOARD_H; y++) {
+        for (let x = 0; x < BOARD_W - 2; x++) {
+          const f1 = testBoard[x][y];
+          const f2 = testBoard[x + 1][y];
+          const f3 = testBoard[x + 2][y];
+
+          if (f1 !== EMPTY && f1 === f2 && f2 === f3) {
+            matches.add(`${x},${y}`);
+            matches.add(`${x + 1},${y}`);
+            matches.add(`${x + 2},${y}`);
+
+            let extraX = x + 3;
+
+            while (extraX < BOARD_W && testBoard[extraX][y] === f1) {
+              matches.add(`${extraX},${y}`);
+              extraX++;
+            }
+          }
+        }
+      }
+
+      for (let x = 0; x < BOARD_W; x++) {
+        for (let y = 0; y < BOARD_H - 2; y++) {
+          const f1 = testBoard[x][y];
+          const f2 = testBoard[x][y + 1];
+          const f3 = testBoard[x][y + 2];
+
+          if (f1 !== EMPTY && f1 === f2 && f2 === f3) {
+            matches.add(`${x},${y}`);
+            matches.add(`${x},${y + 1}`);
+            matches.add(`${x},${y + 2}`);
+
+            let extraY = y + 3;
+
+            while (extraY < BOARD_H && testBoard[x][extraY] === f1) {
+              matches.add(`${x},${extraY}`);
+              extraY++;
+            }
+          }
+        }
+      }
+
+      return [...matches].map(key => {
+        const [x, y] = key.split(",").map(Number);
+        return { x, y, key };
+      });
+    }
+
+    function canMakeMove(testBoard) {
+      for (let x = 0; x < BOARD_W; x++) {
+        for (let y = 0; y < BOARD_H; y++) {
+          if (testBoard[x][y] === EMPTY) continue;
+
+          if (x + 1 < BOARD_W && testBoard[x + 1][y] !== EMPTY) {
+            const copy = copyBoard(testBoard);
+            swapBoard(copy, x, y, x + 1, y);
+
+            if (findMatchingFruits(copy).length > 0) {
+              return true;
+            }
+          }
+
+          if (y + 1 < BOARD_H && testBoard[x][y + 1] !== EMPTY) {
+            const copy = copyBoard(testBoard);
+            swapBoard(copy, x, y, x, y + 1);
+
+            if (findMatchingFruits(copy).length > 0) {
+              return true;
+            }
+          }
+        }
+      }
+
+      return false;
+    }
+
+    function swapBoard(testBoard, x1, y1, x2, y2) {
+      const temp = testBoard[x1][y1];
+      testBoard[x1][y1] = testBoard[x2][y2];
+      testBoard[x2][y2] = temp;
+    }
+
+    function startGame() {
+      board = getFreshPlayableBoard();
+      selected = null;
+      matchedSet = new Set();
+      score = 0;
+      deductCounter = 0;
+      message = "Select your first fruit.";
+      particles = [];
+      floatingTexts = [];
+      gameState = "playing";
+      animating = false;
+
+      cover.classList.add("hidden");
+      gameOver.classList.add("hidden");
+    }
+
+    function endGame(reason) {
+      gameState = "gameover";
+      selected = null;
+      animating = false;
+
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem(HIGH_SCORE_KEY, String(bestScore));
+      }
+
+      finalText.textContent = `${reason} Final Score: ${score} | Best Score: ${bestScore}`;
+      gameOver.classList.remove("hidden");
+    }
+
+    function goMenu() {
+      gameState = "cover";
+      cover.classList.remove("hidden");
+      gameOver.classList.add("hidden");
+    }
+
+    function getCellFromMouse(event) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = WIDTH / rect.width;
+      const scaleY = HEIGHT / rect.height;
+
+      const mx = (event.clientX - rect.left) * scaleX;
+      const my = (event.clientY - rect.top) * scaleY;
+
+      const x = Math.floor((mx - BOARD_X) / TILE);
+      const y = Math.floor((my - BOARD_Y) / TILE);
+
+      if (x < 0 || x >= BOARD_W || y < 0 || y >= BOARD_H) {
+        return null;
+      }
+
+      return { x, y };
+    }
+
+    function areAdjacent(a, b) {
+      const dx = Math.abs(a.x - b.x);
+      const dy = Math.abs(a.y - b.y);
+
+      return dx + dy === 1;
+    }
+
+    async function handleBoardClick(cell) {
+      if (gameState !== "playing" || animating) return;
+      if (!cell) {
+        selected = null;
+        message = "Clicked outside the board. Selection cleared.";
+        return;
+      }
+
+      if (board[cell.x][cell.y] === EMPTY) {
+        selected = null;
+        message = "That space is empty.";
+        return;
+      }
+
+      if (!selected) {
+        selected = cell;
+        message = `Selected ${FRUIT_NAMES[board[cell.x][cell.y]]}. Pick a fruit beside it.`;
+        return;
+      }
+
+      if (selected.x === cell.x && selected.y === cell.y) {
+        selected = null;
+        message = "Same fruit clicked. Selection cleared.";
+        return;
+      }
+
+      if (!areAdjacent(selected, cell)) {
+        selected = null;
+        message = "That fruit is not beside the first one.";
+        playTone(120, 0.18, 0.08);
+        return;
+      }
+
+      animating = true;
+
+      const first = selected;
+      const second = cell;
+
+      swapBoard(board, first.x, first.y, second.x, second.y);
+
+      const matches = findMatchingFruits(board);
+
+      if (matches.length === 0) {
+        message = "No match. Fruits swapped back.";
+        playTone(110, 0.22, 0.09);
+
+        await sleep(220);
+
+        swapBoard(board, first.x, first.y, second.x, second.y);
+        selected = null;
+        animating = false;
+        return;
+      }
+
+      selected = null;
+      await resolveMatches();
+
+      if (!canMakeMove(board)) {
+        endGame("No possible moves.");
+      }
+
+      animating = false;
+    }
+
+    async function resolveMatches() {
+      let combo = 1;
+      let totalMatched = 0;
+
+      while (true) {
+        const matches = findMatchingFruits(board);
+
+        if (matches.length === 0) break;
+
+        matchedSet = new Set(matches.map(m => m.key));
+
+        const points = matches.length * POINTS_PER_FRUIT * combo;
+        score += points;
+        totalMatched += matches.length;
+
+        message = `Combo ${combo}! Matched ${matches.length} fruits. +${points} points.`;
+
+        floatingTexts.push({
+          text: `+${points}`,
+          x: WIDTH / 2,
+          y: BOARD_Y - 18,
+          life: 55,
+          color: "#ffd84d"
+        });
+
+        playTone(480 + combo * 80, 0.13, 0.07);
+
+        for (const match of matches) {
+          const fruit = board[match.x][match.y];
+          const cx = BOARD_X + match.x * TILE + TILE / 2;
+          const cy = BOARD_Y + match.y * TILE + TILE / 2;
+          spawnFruitBurst(cx, cy, FRUIT_COLORS[fruit]);
+        }
+
+        await sleep(320);
+
+        for (const match of matches) {
+          board[match.x][match.y] = EMPTY;
+        }
+
+        matchedSet.clear();
+
+        await sleep(130);
+
+        pullDownAllFruits();
+        await sleep(170);
+
+        refillBoard();
+        combo++;
+
+        await sleep(190);
+      }
+
+      if (totalMatched > 0) {
+        message = `Great move! Total matched: ${totalMatched}.`;
+      }
+    }
+
+    function pullDownAllFruits() {
+      for (let x = 0; x < BOARD_W; x++) {
+        const fruits = [];
+
+        for (let y = BOARD_H - 1; y >= 0; y--) {
+          if (board[x][y] !== EMPTY) {
+            fruits.push(board[x][y]);
+          }
+        }
+
+        for (let y = 0; y < BOARD_H; y++) {
+          board[x][y] = EMPTY;
+        }
+
+        let writeY = BOARD_H - 1;
+
+        for (const fruit of fruits) {
+          board[x][writeY] = fruit;
+          writeY--;
+        }
+      }
+    }
+
+    function refillBoard() {
+      for (let x = 0; x < BOARD_W; x++) {
+        for (let y = 0; y < BOARD_H; y++) {
+          if (board[x][y] === EMPTY) {
+            board[x][y] = Math.floor(Math.random() * NUM_FRUITS);
+
+            const cx = BOARD_X + x * TILE + TILE / 2;
+            const cy = BOARD_Y + y * TILE + TILE / 2;
+            spawnFruitBurst(cx, cy, "#ffffff", 5);
+          }
+        }
+      }
+    }
+
+    function applyScoreDeduction() {
+      if (gameState !== "playing" || animating) return;
+
+      deductCounter++;
+
+      if (deductCounter >= SCORE_DEDUCT_SPEED) {
+        deductCounter = 0;
+
+        if (score > 0) {
+          score--;
+        }
+      }
+    }
+
+    function spawnFruitBurst(x, y, color, count = 16) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 5 + 1.5;
+
+        particles.push({
+          x,
+          y,
+          dx: Math.cos(angle) * speed,
+          dy: Math.sin(angle) * speed,
+          life: Math.random() * 28 + 20,
+          maxLife: Math.random() * 28 + 20,
+          size: Math.random() * 5 + 2,
+          color
+        });
+      }
+    }
+
+    function updateParticles() {
+      for (const p of particles) {
+        p.x += p.dx;
+        p.y += p.dy;
+        p.dx *= 0.98;
+        p.dy *= 0.98;
+        p.life--;
+      }
+
+      particles = particles.filter(p => p.life > 0);
+
+      for (const t of floatingTexts) {
+        t.y -= 0.7;
+        t.life--;
+      }
+
+      floatingTexts = floatingTexts.filter(t => t.life > 0);
+    }
+
+    function updateStars() {
+      for (const star of stars) {
+        star.y += star.speed;
+
+        if (star.y > HEIGHT + 4) {
+          star.y = -4;
+          star.x = Math.random() * WIDTH;
+        }
+      }
+    }
+
+    function drawBackground() {
+      backgroundPulse += 0.01;
+
+      const bg = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+      bg.addColorStop(0, "#020617");
+      bg.addColorStop(0.48, "#07142e");
+      bg.addColorStop(1, "#17051f");
+
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      const glow1 = ctx.createRadialGradient(160, 150, 0, 160, 150, 420);
+      glow1.addColorStop(0, "rgba(0, 229, 255, 0.15)");
+      glow1.addColorStop(1, "rgba(0, 229, 255, 0)");
+      ctx.fillStyle = glow1;
+      ctx.beginPath();
+      ctx.arc(160, 150, 420, 0, Math.PI * 2);
+      ctx.fill();
+
+      const glow2 = ctx.createRadialGradient(750, 180, 0, 750, 180, 430);
+      glow2.addColorStop(0, "rgba(255, 60, 172, 0.12)");
+      glow2.addColorStop(1, "rgba(255, 60, 172, 0)");
+      ctx.fillStyle = glow2;
+      ctx.beginPath();
+      ctx.arc(750, 180, 430, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(0, 229, 255, 0.08)";
+      ctx.lineWidth = 1;
+
+      for (let x = 0; x < WIDTH; x += 42) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, HEIGHT);
+        ctx.stroke();
+      }
+
+      for (let y = 0; y < HEIGHT; y += 42) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(WIDTH, y);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+
+      for (const star of stars) {
+        ctx.save();
+        ctx.globalAlpha = star.alpha;
+        ctx.fillStyle = "#ffffff";
+        ctx.shadowColor = "#ffffff";
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function drawHud() {
+      ctx.save();
+
+      ctx.fillStyle = "rgba(0, 0, 0, 0.42)";
+      roundRect(32, 24, 836, 112, 24);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(0, 229, 255, 0.42)";
+      ctx.lineWidth = 2;
+      roundRect(32, 24, 836, 112, 24);
+      ctx.stroke();
+
+      drawGlowText("3D FRUIT MATCH", 60, 52, 32, "#ffffff", "left");
+      drawText(`Score: ${score}`, 620, 46, 28, "#ffd84d", "left", "bold");
+      drawText(`Best: ${bestScore}`, 620, 84, 22, "#dbe6ff", "left", "bold");
+
+      drawText(message, 60, 96, 18, "#dbe6ff", "left", "bold");
+
+      ctx.restore();
+    }
+
+    function drawBoardFrame() {
+      ctx.save();
+
+      const x = BOARD_X - 16;
+      const y = BOARD_Y - 16;
+      const w = BOARD_PIXEL_W + 32;
+      const h = BOARD_PIXEL_H + 32;
+
+      ctx.shadowColor = "#00e5ff";
+      ctx.shadowBlur = 24;
+
+      const frameGrad = ctx.createLinearGradient(x, y, x + w, y + h);
+      frameGrad.addColorStop(0, "#0c2c72");
+      frameGrad.addColorStop(0.4, "#144caa");
+      frameGrad.addColorStop(1, "#2a0d68");
+
+      ctx.fillStyle = frameGrad;
+      roundRect(x, y, w, h, 28);
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "rgba(255,255,255,0.65)";
+      ctx.lineWidth = 3;
+      roundRect(x + 2, y + 2, w - 4, h - 4, 26);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawBoard() {
+      drawBoardFrame();
+
+      for (let x = 0; x < BOARD_W; x++) {
+        for (let y = 0; y < BOARD_H; y++) {
+          const px = BOARD_X + x * TILE;
+          const py = BOARD_Y + y * TILE;
+
+          draw3DCell(px, py);
+
+          const fruit = board[x][y];
+
+          if (fruit !== EMPTY) {
+            const key = `${x},${y}`;
+            const isMatched = matchedSet.has(key);
+            const isSelected = selected && selected.x === x && selected.y === y;
+
+            if (isMatched) {
+              ctx.save();
+              ctx.shadowColor = "#39ff88";
+              ctx.shadowBlur = 28;
+              ctx.strokeStyle = "#39ff88";
+              ctx.lineWidth = 5;
+              roundRect(px + 4, py + 4, TILE - 8, TILE - 8, 18);
+              ctx.stroke();
+              ctx.restore();
+            }
+
+            drawFruit(fruit, px + TILE / 2, py + TILE / 2, isSelected);
+
+            if (isSelected) {
+              ctx.save();
+              ctx.shadowColor = "#ff3cac";
+              ctx.shadowBlur = 26;
+              ctx.strokeStyle = "#ff3cac";
+              ctx.lineWidth = 5;
+              roundRect(px + 3, py + 3, TILE - 6, TILE - 6, 18);
+              ctx.stroke();
+              ctx.restore();
+            }
+          }
+        }
+      }
+    }
+
+    function draw3DCell(x, y) {
+      ctx.save();
+
+      const grad = ctx.createLinearGradient(x, y, x + TILE, y + TILE);
+      grad.addColorStop(0, "#123b7d");
+      grad.addColorStop(0.45, "#061b42");
+      grad.addColorStop(1, "#020817");
+
+      ctx.fillStyle = grad;
+      roundRect(x + 2, y + 2, TILE - 4, TILE - 4, 12);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(120, 210, 255, 0.36)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x + 8, y + 8);
+      ctx.lineTo(x + TILE - 8, y + 8);
+      ctx.lineTo(x + TILE - 8, y + TILE - 8);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.45)";
+      ctx.beginPath();
+      ctx.moveTo(x + 8, y + TILE - 8);
+      ctx.lineTo(x + TILE - 8, y + TILE - 8);
+      ctx.lineTo(x + TILE - 8, y + 8);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawFruit(type, cx, cy, selectedGlow = false) {
+      ctx.save();
+
+      const scale = selectedGlow ? 1.08 : 1;
+      ctx.translate(cx, cy);
+      ctx.scale(scale, scale);
+      ctx.translate(-cx, -cy);
+
+      if (selectedGlow) {
+        ctx.shadowColor = "#ff3cac";
+        ctx.shadowBlur = 22;
+      }
+
+      switch (type) {
+        case 0:
+          drawApple(cx, cy);
+          break;
+        case 1:
+          drawOrange(cx, cy);
+          break;
+        case 2:
+          drawBanana(cx, cy);
+          break;
+        case 3:
+          drawGrapes(cx, cy);
+          break;
+        case 4:
+          drawStrawberry(cx, cy);
+          break;
+        case 5:
+          drawWatermelon(cx, cy);
+          break;
+        case 6:
+          drawBlueberry(cx, cy);
+          break;
+      }
+
+      ctx.restore();
+    }
+
+    function drawRoundFruit(cx, cy, radius, base, light, dark) {
+      ctx.save();
+
+      ctx.fillStyle = "rgba(0,0,0,0.34)";
+      ctx.beginPath();
+      ctx.ellipse(cx + 4, cy + 21, radius * 0.9, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const grad = ctx.createRadialGradient(cx - 9, cy - 11, 4, cx, cy, radius + 5);
+      grad.addColorStop(0, light);
+      grad.addColorStop(0.36, base);
+      grad.addColorStop(1, dark);
+
+      ctx.shadowColor = base;
+      ctx.shadowBlur = 12;
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+
+      ctx.strokeStyle = "rgba(0,0,0,0.45)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(255,255,255,0.45)";
+      ctx.beginPath();
+      ctx.ellipse(cx - 8, cy - 12, 6, 10, -0.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawApple(cx, cy) {
+      drawRoundFruit(cx, cy + 2, 23, "#ff2d45", "#ff9aa7", "#7a0015");
+
+      ctx.fillStyle = "#5b2b10";
+      roundRect(cx - 3, cy - 29, 7, 17, 3);
+      ctx.fill();
+
+      ctx.fillStyle = "#39ff88";
+      ctx.beginPath();
+      ctx.ellipse(cx + 13, cy - 25, 12, 6, -0.35, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawOrange(cx, cy) {
+      drawRoundFruit(cx, cy + 2, 23, "#ff9f1c", "#ffe07d", "#904000");
+
+      ctx.fillStyle = "rgba(120, 55, 0, 0.35)";
+      for (let i = 0; i < 10; i++) {
+        const a = (Math.PI * 2 * i) / 10;
+        ctx.beginPath();
+        ctx.arc(cx + Math.cos(a) * 11, cy + 2 + Math.sin(a) * 10, 1.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "#39ff88";
+      ctx.beginPath();
+      ctx.ellipse(cx + 10, cy - 24, 10, 5, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawBanana(cx, cy) {
+      ctx.save();
+
+      ctx.shadowColor = "#ffd84d";
+      ctx.shadowBlur = 14;
+
+      ctx.fillStyle = "rgba(0,0,0,0.32)";
+      ctx.beginPath();
+      ctx.ellipse(cx + 4, cy + 22, 25, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.lineCap = "round";
+
+      ctx.strokeStyle = "#8b5510";
+      ctx.lineWidth = 18;
+      ctx.beginPath();
+      ctx.arc(cx, cy - 4, 31, 0.25 * Math.PI, 0.92 * Math.PI);
+      ctx.stroke();
+
+      ctx.strokeStyle = "#e4aa20";
+      ctx.lineWidth = 16;
+      ctx.beginPath();
+      ctx.arc(cx, cy - 4, 31, 0.25 * Math.PI, 0.92 * Math.PI);
+      ctx.stroke();
+
+      ctx.strokeStyle = "#ffe56b";
+      ctx.lineWidth = 11;
+      ctx.beginPath();
+      ctx.arc(cx, cy - 4, 31, 0.28 * Math.PI, 0.88 * Math.PI);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(255,255,255,0.48)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(cx + 2, cy - 6, 23, 0.36 * Math.PI, 0.78 * Math.PI);
+      ctx.stroke();
+
+      ctx.fillStyle = "#5a3510";
+      ctx.beginPath();
+      ctx.arc(cx - 23, cy + 13, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(cx + 27, cy - 13, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawGrapes(cx, cy) {
+      ctx.save();
+
+      ctx.fillStyle = "rgba(0,0,0,0.34)";
+      ctx.beginPath();
+      ctx.ellipse(cx + 4, cy + 24, 22, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const positions = [
+        [-10, -15], [2, -16],
+        [-17, -3], [-5, -4], [8, -3],
+        [-11, 9], [2, 10],
+        [-5, 22]
+      ];
+
+      for (const [dx, dy] of positions) {
+        drawRoundFruit(cx + dx, cy + dy, 9, "#9b5cff", "#d9b7ff", "#31004f");
+      }
+
+      ctx.fillStyle = "#39ff88";
+      ctx.beginPath();
+      ctx.ellipse(cx + 14, cy - 24, 11, 5, -0.35, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "#5b7a22";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 23);
+      ctx.lineTo(cx - 3, cy - 33);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawStrawberry(cx, cy) {
+      ctx.save();
+
+      ctx.fillStyle = "rgba(0,0,0,0.34)";
+      ctx.beginPath();
+      ctx.ellipse(cx + 4, cy + 23, 21, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.shadowColor = "#ff3c6f";
+      ctx.shadowBlur = 14;
+
+      const grad = ctx.createRadialGradient(cx - 8, cy - 10, 4, cx, cy, 29);
+      grad.addColorStop(0, "#ff9fb2");
+      grad.addColorStop(0.35, "#ff3c6f");
+      grad.addColorStop(1, "#7f001a");
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + 28);
+      ctx.bezierCurveTo(cx - 28, cy - 5, cx - 20, cy - 25, cx, cy - 20);
+      ctx.bezierCurveTo(cx + 20, cy - 25, cx + 28, cy - 5, cx, cy + 28);
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "rgba(0,0,0,0.45)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = "#ffe88a";
+      const seeds = [
+        [-9, -5], [3, -7], [13, -2],
+        [-12, 8], [0, 7], [11, 12],
+        [-3, 21]
+      ];
+
+      for (const [dx, dy] of seeds) {
+        ctx.beginPath();
+        ctx.ellipse(cx + dx, cy + dy, 2, 4, 0.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "#39ff88";
+      for (let i = -2; i <= 2; i++) {
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 22);
+        ctx.lineTo(cx + i * 8, cy - 35 + Math.abs(i) * 4);
+        ctx.lineTo(cx + i * 5, cy - 21);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function drawWatermelon(cx, cy) {
+      ctx.save();
+
+      ctx.fillStyle = "rgba(0,0,0,0.34)";
+      ctx.beginPath();
+      ctx.ellipse(cx + 4, cy + 23, 24, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.shadowColor = "#39ff88";
+      ctx.shadowBlur = 14;
+
+      ctx.fillStyle = "#0c7a32";
+      ctx.beginPath();
+      ctx.moveTo(cx - 27, cy + 20);
+      ctx.lineTo(cx + 27, cy + 20);
+      ctx.lineTo(cx, cy - 24);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#e7ffd0";
+      ctx.beginPath();
+      ctx.moveTo(cx - 22, cy + 16);
+      ctx.lineTo(cx + 22, cy + 16);
+      ctx.lineTo(cx, cy - 18);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#ff4d6d";
+      ctx.beginPath();
+      ctx.moveTo(cx - 17, cy + 12);
+      ctx.lineTo(cx + 17, cy + 12);
+      ctx.lineTo(cx, cy - 13);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = "#111";
+      for (const [dx, dy] of [[-7, 5], [0, 0], [8, 6]]) {
+        ctx.beginPath();
+        ctx.ellipse(cx + dx, cy + dy, 2.3, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function drawBlueberry(cx, cy) {
+      drawRoundFruit(cx, cy + 2, 23, "#4d8dff", "#b7d5ff", "#15245f");
+
+      ctx.fillStyle = "#111a4d";
+      ctx.beginPath();
+      ctx.arc(cx + 4, cy - 8, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "#7fa9ff";
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+      ctx.moveTo(cx + 4, cy - 17);
+      ctx.lineTo(cx + 4, cy + 1);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(cx - 5, cy - 8);
+      ctx.lineTo(cx + 13, cy - 8);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(cx - 2, cy - 14);
+      ctx.lineTo(cx + 10, cy - 2);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(cx + 10, cy - 14);
+      ctx.lineTo(cx - 2, cy - 2);
+      ctx.stroke();
+    }
+
+    function drawParticles() {
+      for (const p of particles) {
+        const alpha = p.life / p.maxLife;
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      for (const t of floatingTexts) {
+        const alpha = t.life / 55;
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = t.color;
+        ctx.font = "900 36px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.shadowColor = t.color;
+        ctx.shadowBlur = 16;
+        ctx.fillText(t.text, t.x, t.y);
+        ctx.restore();
+      }
+    }
+
+    function drawText(text, x, y, size, color = "#ffffff", align = "left", weight = "normal") {
+      ctx.fillStyle = color;
+      ctx.font = `${weight} ${size}px Arial`;
+      ctx.textAlign = align;
+      ctx.textBaseline = "top";
+      ctx.fillText(text, x, y);
+    }
+
+    function drawGlowText(text, x, y, size, color = "#ffffff", align = "left") {
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.font = `900 ${size}px Arial`;
+      ctx.textAlign = align;
+      ctx.textBaseline = "top";
+      ctx.shadowColor = "#00e5ff";
+      ctx.shadowBlur = 18;
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function update() {
+      applyScoreDeduction();
+      updateParticles();
+      updateStars();
+    }
+
+    function draw() {
+      drawBackground();
+
+      if (gameState === "playing" || gameState === "gameover") {
+        drawHud();
+        drawBoard();
+        drawParticles();
+      } else {
+        drawParticles();
+      }
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    let audioCtx = null;
+
+    function playTone(freq, duration = 0.12, volume = 0.06) {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, now);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(volume, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + duration + 0.03);
+      } catch (error) {
+        console.log("Audio unavailable");
+      }
+    }
+
+    canvas.addEventListener("mousedown", async (event) => {
+      const cell = getCellFromMouse(event);
+      await handleBoardClick(cell);
+    });
+
+    startBtn.addEventListener("click", startGame);
+    restartBtn.addEventListener("click", startGame);
+    menuBtn.addEventListener("click", goMenu);
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && gameState === "cover") {
+        startGame();
+      }
+
+      if (event.key === "r" || event.key === "R") {
+        startGame();
+      }
+
+      if (event.key === "Escape") {
+        goMenu();
+      }
+    });
+
+    makeStars();
+    board = getFreshPlayableBoard();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
