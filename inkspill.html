@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ink Spill</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #101018;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      color: white;
+    }
+
+    canvas {
+      display: block;
+      width: min(100vw, calc(100vh * 1.333));
+      height: auto;
+      max-height: 100vh;
+      background: #1e1e1e;
+      border-radius: 18px;
+      box-shadow:
+        0 0 25px rgba(0, 229, 255, 0.18),
+        0 0 55px rgba(155, 92, 255, 0.15),
+        0 20px 60px rgba(0, 0, 0, 0.55);
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="gameCanvas" width="640" height="480"></canvas>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const WIDTH = canvas.width;
+    const HEIGHT = canvas.height;
+
+    const COLORS = [
+      "#ff0000",
+      "#00b400",
+      "#0000ff",
+      "#ffff00",
+      "#ffa500",
+      "#800080"
+    ];
+
+    const COLOR_NAMES = [
+      "Red",
+      "Green",
+      "Blue",
+      "Yellow",
+      "Orange",
+      "Purple"
+    ];
+
+    const BACKGROUND_COLOR = "#1e1e1e";
+    const BLACK = "#000000";
+    const WHITE = "#ffffff";
+    const GRAY = "#787878";
+    const DARK_GRAY = "#464646";
+    const GREEN = "#00b400";
+
+    const BOARD_PIXEL_SIZE = 350;
+    let gridRows = 10;
+    let gridCols = 10;
+    let cellSize = BOARD_PIXEL_SIZE / gridRows;
+
+    const gridX = (WIDTH - BOARD_PIXEL_SIZE) / 2;
+    const gridY = 20;
+
+    const BUTTON_SIZE = 45;
+    const BUTTON_GAP = 12;
+    const PALETTE_Y = 400;
+    const TOTAL_PALETTE_WIDTH = BUTTON_SIZE * 6 + BUTTON_GAP * 5;
+    const PALETTE_X = (WIDTH - TOTAL_PALETTE_WIDTH) / 2;
+
+    const resetButtonRect = { x: 20, y: 85, w: 110, h: 36 };
+    const settingsButtonRect = { x: 20, y: 130, w: 110, h: 36 };
+
+    const settingsModalRect = { x: 140, y: 60, w: 360, h: 370 };
+
+    const size10ButtonRect = { x: 180, y: 135, w: 130, h: 38 };
+    const size14ButtonRect = { x: 330, y: 135, w: 130, h: 38 };
+
+    const easyButtonRect = { x: 220, y: 220, w: 200, h: 36 };
+    const mediumButtonRect = { x: 220, y: 265, w: 200, h: 36 };
+    const hardButtonRect = { x: 220, y: 310, w: 200, h: 36 };
+    const closeSettingsButtonRect = { x: 220, y: 360, w: 200, h: 36 };
+
+    const difficulties = {
+      Easy: 30,
+      Medium: 20,
+      Hard: 15
+    };
+
+    let currentDifficulty = "Medium";
+    let maxMoves = difficulties[currentDifficulty];
+    let movesLeft = maxMoves;
+
+    const HIGH_SCORE_KEY = "ink_spill_high_score_html";
+    let highScore = loadHighScore();
+
+    const LIFE_BAR_X = 570;
+    const LIFE_BAR_Y = 70;
+    const LIFE_BAR_WIDTH = 30;
+    const LIFE_BAR_HEIGHT = 280;
+
+    const RESET_DELAY = 2000;
+    const FLASH_DURATION = 600;
+
+    let gameState = "START";
+    let previousGameState = "PLAYING";
+
+    let grid = [];
+    let paletteButtons = [];
+
+    let selectedColor = null;
+    let selectedIndex = -1;
+
+    let isAnimating = false;
+    let isResetting = false;
+    let resetStartTime = 0;
+
+    let flashActive = false;
+    let flashStartTime = 0;
+
+    let gameWon = false;
+    let gameLost = false;
+
+    function loadHighScore() {
+      const saved = localStorage.getItem(HIGH_SCORE_KEY);
+
+      if (saved === null) {
+        return null;
+      }
+
+      const value = Number(saved);
+
+      if (Number.isNaN(value)) {
+        return null;
+      }
+
+      return value;
+    }
+
+    function saveHighScore(score) {
+      localStorage.setItem(HIGH_SCORE_KEY, String(score));
+    }
+
+    function buildPaletteButtons() {
+      paletteButtons = [];
+
+      for (let i = 0; i < COLORS.length; i++) {
+        const x = PALETTE_X + i * (BUTTON_SIZE + BUTTON_GAP);
+        const y = PALETTE_Y;
+
+        paletteButtons.push({
+          x,
+          y,
+          w: BUTTON_SIZE,
+          h: BUTTON_SIZE
+        });
+      }
+    }
+
+    function generateRandomBoard() {
+      grid = [];
+
+      for (let row = 0; row < gridRows; row++) {
+        const gridRow = [];
+
+        for (let col = 0; col < gridCols; col++) {
+          const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+          gridRow.push(color);
+        }
+
+        grid.push(gridRow);
+      }
+    }
+
+    function startGame() {
+      generateRandomBoard();
+
+      movesLeft = maxMoves;
+      selectedColor = null;
+      selectedIndex = -1;
+
+      gameWon = false;
+      gameLost = false;
+      isResetting = false;
+      isAnimating = false;
+      resetStartTime = 0;
+
+      flashActive = false;
+      flashStartTime = 0;
+
+      gameState = "PLAYING";
+    }
+
+    function resetGame() {
+      generateRandomBoard();
+
+      movesLeft = maxMoves;
+      selectedColor = null;
+      selectedIndex = -1;
+
+      gameWon = false;
+      gameLost = false;
+      isResetting = false;
+      isAnimating = false;
+      resetStartTime = 0;
+
+      flashActive = false;
+      flashStartTime = 0;
+    }
+
+    function changeBoardSize(newSize) {
+      gridRows = newSize;
+      gridCols = newSize;
+      cellSize = BOARD_PIXEL_SIZE / gridRows;
+
+      resetGame();
+      gameState = "PLAYING";
+    }
+
+    function changeDifficulty(newDifficulty) {
+      currentDifficulty = newDifficulty;
+      maxMoves = difficulties[currentDifficulty];
+      movesLeft = maxMoves;
+
+      resetGame();
+      gameState = "PLAYING";
+    }
+
+    function openSettings() {
+      previousGameState = gameState;
+      gameState = "SETTINGS";
+    }
+
+    function closeSettings() {
+      gameState = previousGameState;
+    }
+
+    function startSoftReset() {
+      isResetting = true;
+      resetStartTime = performance.now();
+    }
+
+    function updateSoftReset() {
+      if (!isResetting) return;
+
+      const currentTime = performance.now();
+
+      if (currentTime - resetStartTime >= RESET_DELAY) {
+        resetGame();
+      }
+    }
+
+    function startWhiteFlash() {
+      flashActive = true;
+      flashStartTime = performance.now();
+      isAnimating = true;
+    }
+
+    function drawFlashScreen() {
+      if (!flashActive) return;
+
+      const currentTime = performance.now();
+      const elapsedTime = currentTime - flashStartTime;
+
+      if (elapsedTime < FLASH_DURATION) {
+        const alpha = 1 - elapsedTime / FLASH_DURATION;
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = WHITE;
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+        ctx.restore();
+      } else {
+        flashActive = false;
+        isAnimating = false;
+      }
+    }
+
+    function drawText(text, x, y, size, color = WHITE, align = "left", weight = "normal") {
+      ctx.fillStyle = color;
+      ctx.font = `${weight} ${size}px Arial`;
+      ctx.textAlign = align;
+      ctx.textBaseline = "top";
+      ctx.fillText(text, x, y);
+    }
+
+    function drawCenteredText(text, x, y, size, color = WHITE, weight = "normal") {
+      ctx.fillStyle = color;
+      ctx.font = `${weight} ${size}px Arial`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(text, x, y);
+    }
+
+    function drawButton(rect, label, fill = DARK_GRAY, stroke = WHITE) {
+      ctx.fillStyle = fill;
+      ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+
+      drawCenteredText(label, rect.x + rect.w / 2, rect.y + rect.h / 2, 18, WHITE, "bold");
+    }
+
+    function drawStartScreen() {
+      ctx.fillStyle = BACKGROUND_COLOR;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      const bg = ctx.createRadialGradient(WIDTH / 2, 90, 20, WIDTH / 2, 90, 320);
+      bg.addColorStop(0, "rgba(0, 229, 255, 0.18)");
+      bg.addColorStop(1, "rgba(0, 229, 255, 0)");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      drawCenteredText("INK SPILL", WIDTH / 2, 90, 62, WHITE, "bold");
+
+      drawCenteredText("Goal: Make the entire board one color.", WIDTH / 2, 170, 20);
+      drawCenteredText("Click the color buttons at the bottom to flood the board.", WIDTH / 2, 205, 20);
+      drawCenteredText("You start from the top-left square.", WIDTH / 2, 240, 20);
+      drawCenteredText("Win before you run out of moves.", WIDTH / 2, 275, 20);
+
+      const bestText = highScore === null ? "Best Win: None" : `Best Win: ${highScore} moves`;
+      drawCenteredText(bestText, WIDTH / 2, 325, 21, "#ffd84d", "bold");
+
+      drawCenteredText("Press SPACE or click to start", WIDTH / 2, 390, 28, WHITE, "bold");
+    }
+
+    function drawGrid() {
+      for (let row = 0; row < gridRows; row++) {
+        for (let col = 0; col < gridCols; col++) {
+          const color = grid[row][col];
+
+          const x = gridX + col * cellSize;
+          const y = gridY + row * cellSize;
+
+          ctx.fillStyle = color;
+          ctx.fillRect(x, y, cellSize, cellSize);
+
+          ctx.strokeStyle = BLACK;
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x, y, cellSize, cellSize);
+        }
+      }
+    }
+
+    function drawPalettes() {
+      for (let i = 0; i < paletteButtons.length; i++) {
+        const button = paletteButtons[i];
+        const color = COLORS[i];
+
+        ctx.fillStyle = color;
+        ctx.fillRect(button.x, button.y, button.w, button.h);
+
+        ctx.strokeStyle = WHITE;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(button.x, button.y, button.w, button.h);
+
+        if (selectedIndex === i) {
+          ctx.strokeStyle = BLACK;
+          ctx.lineWidth = 5;
+          ctx.strokeRect(button.x + 2, button.y + 2, button.w - 4, button.h - 4);
+        }
+      }
+    }
+
+    function drawMoves() {
+      drawText(`Moves Left: ${movesLeft}`, 20, 20, 28, WHITE, "left", "bold");
+    }
+
+    function drawHighScore() {
+      const text = highScore === null ? "Best Win: None" : `Best Win: ${highScore} moves`;
+      drawText(text, 20, 55, 19, WHITE);
+    }
+
+    function drawBoardSize() {
+      drawText(`Board: ${gridRows}x${gridCols}`, 20, 170, 19, WHITE);
+    }
+
+    function drawDifficulty() {
+      drawText(`Difficulty: ${currentDifficulty}`, 20, 195, 19, WHITE);
+    }
+
+    function drawLifeMeter() {
+      ctx.strokeStyle = WHITE;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(LIFE_BAR_X, LIFE_BAR_Y, LIFE_BAR_WIDTH, LIFE_BAR_HEIGHT);
+
+      ctx.fillStyle = GRAY;
+      ctx.fillRect(
+        LIFE_BAR_X + 2,
+        LIFE_BAR_Y + 2,
+        LIFE_BAR_WIDTH - 4,
+        LIFE_BAR_HEIGHT - 4
+      );
+
+      const moveRatio = movesLeft / maxMoves;
+      const fillHeight = Math.floor((LIFE_BAR_HEIGHT - 4) * moveRatio);
+
+      const fillX = LIFE_BAR_X + 2;
+      const fillY = LIFE_BAR_Y + 2 + (LIFE_BAR_HEIGHT - 4 - fillHeight);
+      const fillWidth = LIFE_BAR_WIDTH - 4;
+
+      ctx.fillStyle = GREEN;
+      ctx.fillRect(fillX, fillY, fillWidth, fillHeight);
+
+      drawText("Life", LIFE_BAR_X - 5, LIFE_BAR_Y - 25, 19, WHITE);
+    }
+
+    function drawWinLossOverlay() {
+      if (!gameWon && !gameLost) return;
+
+      ctx.save();
+      ctx.globalAlpha = 0.67;
+      ctx.fillStyle = BLACK;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      ctx.restore();
+
+      if (gameWon) {
+        drawCenteredText("Victory!", WIDTH / 2, 190, 46, WHITE, "bold");
+        drawCenteredText("You spilled the ink across the whole board.", WIDTH / 2, 240, 20);
+      } else {
+        drawCenteredText("Game Over!", WIDTH / 2, 190, 46, WHITE, "bold");
+        drawCenteredText("You ran out of moves before finishing.", WIDTH / 2, 240, 20);
+      }
+
+      drawCenteredText("New game starting...", WIDTH / 2, 285, 20);
+    }
+
+    function drawSettingsModal() {
+      ctx.save();
+      ctx.globalAlpha = 0.67;
+      ctx.fillStyle = BLACK;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      ctx.restore();
+
+      ctx.fillStyle = DARK_GRAY;
+      ctx.fillRect(settingsModalRect.x, settingsModalRect.y, settingsModalRect.w, settingsModalRect.h);
+
+      ctx.strokeStyle = WHITE;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(settingsModalRect.x, settingsModalRect.y, settingsModalRect.w, settingsModalRect.h);
+
+      drawCenteredText("Settings", WIDTH / 2, 90, 30, WHITE, "bold");
+
+      drawCenteredText("Board Size", WIDTH / 2, 120, 20, WHITE);
+      drawButton(size10ButtonRect, "10 x 10", GRAY);
+      drawButton(size14ButtonRect, "14 x 14", GRAY);
+
+      drawCenteredText("Difficulty", WIDTH / 2, 205, 20, WHITE);
+
+      drawButton(easyButtonRect, "Easy - 30 Moves", currentDifficulty === "Easy" ? "#00b400" : GRAY);
+      drawButton(mediumButtonRect, "Medium - 20 Moves", currentDifficulty === "Medium" ? "#00b400" : GRAY);
+      drawButton(hardButtonRect, "Hard - 15 Moves", currentDifficulty === "Hard" ? "#00b400" : GRAY);
+
+      drawButton(closeSettingsButtonRect, "Close", GRAY);
+    }
+
+    function getPaletteIndex(mousePos) {
+      for (let i = 0; i < paletteButtons.length; i++) {
+        if (pointInRect(mousePos, paletteButtons[i])) {
+          return i;
+        }
+      }
+
+      return -1;
+    }
+
+    function canProcessInput() {
+      if (gameState !== "PLAYING") return false;
+      if (isAnimating) return false;
+      if (isResetting) return false;
+      if (gameWon) return false;
+      if (gameLost) return false;
+
+      return true;
+    }
+
+    function canOpenSettings() {
+      if (gameState !== "PLAYING") return false;
+      if (isAnimating || isResetting || gameWon || gameLost) return false;
+
+      return true;
+    }
+
+    function floodFill(startRow, startCol, oldColor, targetColor) {
+      if (oldColor === targetColor) return;
+
+      const stack = [{ row: startRow, col: startCol }];
+
+      while (stack.length > 0) {
+        const current = stack.pop();
+        const row = current.row;
+        const col = current.col;
+
+        if (row < 0 || row >= gridRows) continue;
+        if (col < 0 || col >= gridCols) continue;
+        if (grid[row][col] !== oldColor) continue;
+
+        grid[row][col] = targetColor;
+
+        stack.push({ row: row - 1, col });
+        stack.push({ row: row + 1, col });
+        stack.push({ row, col: col - 1 });
+        stack.push({ row, col: col + 1 });
+      }
+    }
+
+    function hasWon() {
+      const firstColor = grid[0][0];
+
+      for (let row = 0; row < gridRows; row++) {
+        for (let col = 0; col < gridCols; col++) {
+          if (grid[row][col] !== firstColor) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    }
+
+    function hasLost() {
+      return movesLeft === 0 && !hasWon();
+    }
+
+    function updateHighScore(movesUsed) {
+      if (highScore === null || movesUsed < highScore) {
+        highScore = movesUsed;
+        saveHighScore(highScore);
+      }
+    }
+
+    function handlePaletteClick(mousePos) {
+      const clickedIndex = getPaletteIndex(mousePos);
+
+      if (clickedIndex === -1) return;
+
+      const clickedColor = COLORS[clickedIndex];
+
+      selectedColor = clickedColor;
+      selectedIndex = clickedIndex;
+
+      const oldColor = grid[0][0];
+
+      if (oldColor === clickedColor) {
+        return;
+      }
+
+      floodFill(0, 0, oldColor, clickedColor);
+
+      movesLeft -= 1;
+
+      if (hasWon()) {
+        gameWon = true;
+
+        const movesUsed = maxMoves - movesLeft;
+        updateHighScore(movesUsed);
+
+        startWhiteFlash();
+        startSoftReset();
+      } else if (hasLost()) {
+        gameLost = true;
+        startSoftReset();
+      }
+    }
+
+    function drawPlayingScreen() {
+      ctx.fillStyle = BACKGROUND_COLOR;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      drawMoves();
+      drawHighScore();
+      drawButton(resetButtonRect, "Reset", DARK_GRAY);
+      drawButton(settingsButtonRect, "Settings", DARK_GRAY);
+      drawBoardSize();
+      drawDifficulty();
+
+      drawGrid();
+      drawPalettes();
+      drawLifeMeter();
+
+      drawWinLossOverlay();
+      drawFlashScreen();
+    }
+
+    function draw() {
+      if (gameState === "START") {
+        drawStartScreen();
+      } else if (gameState === "PLAYING") {
+        drawPlayingScreen();
+      } else if (gameState === "SETTINGS") {
+        drawPlayingScreen();
+        drawSettingsModal();
+      }
+    }
+
+    function gameLoop() {
+      if (gameState === "PLAYING") {
+        updateSoftReset();
+      }
+
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function pointInRect(point, rect) {
+      return (
+        point.x >= rect.x &&
+        point.x <= rect.x + rect.w &&
+        point.y >= rect.y &&
+        point.y <= rect.y + rect.h
+      );
+    }
+
+    function getMousePos(event) {
+      const rect = canvas.getBoundingClientRect();
+
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+
+      return {
+        x: (event.clientX - rect.left) * scaleX,
+        y: (event.clientY - rect.top) * scaleY
+      };
+    }
+
+    canvas.addEventListener("mousedown", (event) => {
+      const mousePos = getMousePos(event);
+
+      if (gameState === "START") {
+        startGame();
+        return;
+      }
+
+      if (gameState === "PLAYING") {
+        if (pointInRect(mousePos, resetButtonRect)) {
+          resetGame();
+        } else if (pointInRect(mousePos, settingsButtonRect) && canOpenSettings()) {
+          openSettings();
+        } else if (canProcessInput()) {
+          handlePaletteClick(mousePos);
+        }
+
+        return;
+      }
+
+      if (gameState === "SETTINGS") {
+        if (pointInRect(mousePos, size10ButtonRect)) {
+          changeBoardSize(10);
+        } else if (pointInRect(mousePos, size14ButtonRect)) {
+          changeBoardSize(14);
+        } else if (pointInRect(mousePos, easyButtonRect)) {
+          changeDifficulty("Easy");
+        } else if (pointInRect(mousePos, mediumButtonRect)) {
+          changeDifficulty("Medium");
+        } else if (pointInRect(mousePos, hardButtonRect)) {
+          changeDifficulty("Hard");
+        } else if (pointInRect(mousePos, closeSettingsButtonRect)) {
+          closeSettings();
+        }
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (gameState === "START" && event.code === "Space") {
+        event.preventDefault();
+        startGame();
+      }
+
+      if (gameState === "SETTINGS" && event.key === "Escape") {
+        event.preventDefault();
+        closeSettings();
+      }
+    });
+
+    buildPaletteButtons();
+    generateRandomBoard();
+    draw();
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>

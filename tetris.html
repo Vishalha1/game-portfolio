@@ -3,21 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tetris (Stages 1-26)</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+  <title>Neon Tetris</title>
 
-    html, body {
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #000;
+      background: #02030f;
       font-family: Arial, Helvetica, sans-serif;
     }
 
     body {
       display: grid;
       place-items: center;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(0, 229, 255, 0.18), transparent 28%),
+        radial-gradient(circle at 80% 20%, rgba(255, 60, 172, 0.16), transparent 28%),
+        radial-gradient(circle at 50% 90%, rgba(57, 255, 136, 0.12), transparent 35%),
+        linear-gradient(135deg, #02030f, #071129, #110525);
     }
 
     canvas {
@@ -27,11 +38,17 @@
       height: auto;
       max-height: 98vh;
       outline: none;
+      border-radius: 18px;
+      box-shadow:
+        0 0 25px rgba(0, 229, 255, 0.35),
+        0 0 60px rgba(155, 92, 255, 0.25),
+        0 0 90px rgba(255, 60, 172, 0.14);
     }
   </style>
 </head>
+
 <body>
-  <canvas id="game" width="760" height="750" tabindex="0" aria-label="Tetris game"></canvas>
+  <canvas id="game" width="760" height="750" tabindex="0" aria-label="Neon Tetris game"></canvas>
 
   <script>
     const canvas = document.getElementById("game");
@@ -42,7 +59,7 @@
 
     const PLAY_X = 274;
     const PLAY_Y = 61;
-    const PLAY_W = 336;
+    const PLAY_W = 356;
     const PLAY_H = 700;
 
     const SIDEBAR_X = 28;
@@ -54,12 +71,18 @@
     const ROWS = 20;
     const CELL = 34;
 
-    const BOARD_X = PLAY_X + 6;
+    const BOARD_X = PLAY_X + 8;
     const BOARD_Y = PLAY_Y + 14;
 
-    const CYAN = "#9cecff";
-    const GRID = "#57c9ff";
-    const TEXT = "#dddddd";
+    const TEXT = "#f7fbff";
+    const MUTED = "#b7c6e7";
+    const CYAN = "#00e5ff";
+    const PINK = "#ff3cac";
+    const PURPLE = "#9b5cff";
+    const GREEN = "#39ff88";
+    const YELLOW = "#ffd84d";
+    const RED = "#ff6b6b";
+
     const PANEL_BG = "#03051b";
     const BLACK = "#000000";
 
@@ -124,7 +147,7 @@
     let level = 1;
     let highScore = Number(localStorage.getItem(HIGH_SCORE_KEY) || 0);
 
-    let state = "title"; // title, playing, paused, gameover
+    let state = "title";
     let lastTime = 0;
     let dropCounter = 0;
 
@@ -134,6 +157,10 @@
     let musicClock = 0;
     let musicStep = 0;
     const musicNotes = [261.63, 329.63, 392.0, 523.25, 392.0, 329.63, 293.66, 349.23];
+
+    let screenShake = 0;
+    let flashAlpha = 0;
+    let glowPulse = 0;
 
     function createBoard() {
       return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
@@ -147,11 +174,13 @@
       const rows = matrix.length;
       const cols = matrix[0].length;
       const out = Array.from({ length: cols }, () => Array(rows).fill(0));
+
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
           out[x][rows - 1 - y] = matrix[y][x];
         }
       }
+
       return out;
     }
 
@@ -159,11 +188,13 @@
       const rows = matrix.length;
       const cols = matrix[0].length;
       const out = Array.from({ length: cols }, () => Array(rows).fill(0));
+
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
           out[cols - 1 - x][y] = matrix[y][x];
         }
       }
+
       return out;
     }
 
@@ -172,6 +203,7 @@
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
       }
+
       return array;
     }
 
@@ -189,6 +221,7 @@
     function makePiece(type) {
       const matrix = cloneMatrix(SHAPES[type]);
       const spawnX = Math.floor((COLS - matrix[0].length) / 2);
+
       return {
         type,
         matrix,
@@ -201,7 +234,8 @@
       ensureQueue();
       current = makePiece(nextQueue.shift());
       canHold = true;
-      playNote(musicNotes[musicStep % musicNotes.length], 0.06, 0.18);
+
+      playNote(musicNotes[musicStep % musicNotes.length], 0.05, 0.14);
       musicStep += 1;
 
       if (collides(current.matrix, current.x, current.y)) {
@@ -220,8 +254,12 @@
       dropCounter = 0;
       musicClock = 0;
       musicStep = 0;
+      screenShake = 0;
+      flashAlpha = 0;
+
       ensureQueue();
       spawnPiece();
+
       state = "playing";
     }
 
@@ -236,12 +274,15 @@
       for (let y = 0; y < matrix.length; y++) {
         for (let x = 0; x < matrix[y].length; x++) {
           if (!matrix[y][x]) continue;
+
           const bx = offsetX + x;
           const by = offsetY + y;
+
           if (bx < 0 || bx >= COLS || by >= ROWS) return true;
           if (by >= 0 && board[by][bx]) return true;
         }
       }
+
       return false;
     }
 
@@ -249,8 +290,10 @@
       for (let y = 0; y < current.matrix.length; y++) {
         for (let x = 0; x < current.matrix[y].length; x++) {
           if (!current.matrix[y][x]) continue;
+
           const bx = current.x + x;
           const by = current.y + y;
+
           if (by >= 0) {
             board[by][bx] = current.type;
           }
@@ -272,11 +315,16 @@
 
       if (cleared > 0) {
         const points = [0, 100, 300, 500, 800];
+
         score += points[cleared] * level;
         lines += cleared;
         level = Math.floor(lines / 10) + 1;
+
+        flashAlpha = 0.25;
+        screenShake = 8;
+
         saveHighScore();
-        playNote(523.25 + cleared * 80, 0.08, 0.22);
+        playNote(523.25 + cleared * 90, 0.08, 0.22);
       }
     }
 
@@ -288,8 +336,10 @@
 
     function move(dx) {
       if (state !== "playing") return;
+
       if (!collides(current.matrix, current.x + dx, current.y)) {
         current.x += dx;
+        playNote(300, 0.015, 0.05);
       }
     }
 
@@ -308,22 +358,31 @@
       if (state !== "playing") return;
 
       let cells = 0;
+
       while (!collides(current.matrix, current.x, current.y + 1)) {
         current.y += 1;
         cells += 1;
       }
-      score += cells * 2;
-      playNote(659.25, 0.05, 0.15);
+
+      score += cells * 3;
+
+      screenShake = 12;
+      flashAlpha = 0.32;
+
+      playNote(659.25, 0.08, 0.12);
+      playNote(329.63, 0.05, 0.18);
+
       lockPiece();
     }
 
     function tryRotate(rotated) {
       const kicks = [0, -1, 1, -2, 2];
+
       for (const kick of kicks) {
         if (!collides(rotated, current.x + kick, current.y)) {
           current.matrix = rotated;
           current.x += kick;
-          playNote(440, 0.03, 0.12);
+          playNote(440, 0.03, 0.1);
           return;
         }
       }
@@ -357,14 +416,16 @@
         saveHighScore();
       }
 
-      playNote(349.23, 0.05, 0.16);
+      playNote(349.23, 0.05, 0.14);
     }
 
     function getGhostY() {
       let ghostY = current.y;
+
       while (!collides(current.matrix, current.x, ghostY + 1)) {
         ghostY += 1;
       }
+
       return ghostY;
     }
 
@@ -377,6 +438,7 @@
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
+
       if (audioCtx.state === "suspended") {
         audioCtx.resume();
       }
@@ -417,7 +479,7 @@
       if (musicClock >= interval) {
         musicClock = 0;
         const note = musicNotes[musicStep % musicNotes.length] * (level >= 6 ? 2 : 1);
-        playNote(note, 0.03, 0.14);
+        playNote(note, 0.025, 0.12);
         musicStep += 1;
       }
     }
@@ -430,26 +492,97 @@
       ctx.fillText(text, x, y);
     }
 
-    function drawPanelFrames() {
-      ctx.fillStyle = BLACK;
+    function drawGlowText(text, x, y, size, align = "left", color = TEXT, weight = "bold") {
+      ctx.save();
+      ctx.font = `${weight} ${size}px Arial`;
+      ctx.textAlign = align;
+      ctx.textBaseline = "top";
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = color;
+      ctx.fillText(text, x, y);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function drawBackground() {
+      const bg = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
+      bg.addColorStop(0, "#030816");
+      bg.addColorStop(0.45, "#07173b");
+      bg.addColorStop(1, "#160727");
+
+      ctx.fillStyle = bg;
       ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-      ctx.fillStyle = PANEL_BG;
-      ctx.fillRect(SIDEBAR_X, SIDEBAR_Y, SIDEBAR_W, SIDEBAR_H);
-      ctx.fillRect(PLAY_X, PLAY_Y, PLAY_W, PLAY_H);
+      ctx.save();
+      ctx.globalAlpha = 0.2;
+      ctx.strokeStyle = "#00e5ff";
+      ctx.lineWidth = 1;
 
+      for (let x = 0; x < WIDTH; x += 38) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, HEIGHT);
+        ctx.stroke();
+      }
+
+      for (let y = 0; y < HEIGHT; y += 38) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(WIDTH, y);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function drawPanelFrames() {
+      drawBackground();
+
+      ctx.save();
+
+      ctx.shadowColor = CYAN;
+      ctx.shadowBlur = 18;
       ctx.strokeStyle = CYAN;
-      ctx.lineWidth = 5;
-      ctx.strokeRect(SIDEBAR_X, SIDEBAR_Y, SIDEBAR_W, SIDEBAR_H);
-      ctx.strokeRect(PLAY_X, PLAY_Y, PLAY_W, PLAY_H);
+      ctx.lineWidth = 4;
+
+      ctx.fillStyle = "rgba(3, 5, 27, 0.94)";
+      roundRect(SIDEBAR_X, SIDEBAR_Y, SIDEBAR_W, SIDEBAR_H, 18);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(3, 5, 27, 0.94)";
+      roundRect(PLAY_X, PLAY_Y, PLAY_W, PLAY_H, 18);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.restore();
     }
 
     function drawGrid() {
+      ctx.save();
+
       ctx.fillStyle = BLACK;
       ctx.fillRect(BOARD_X, BOARD_Y, COLS * CELL, ROWS * CELL);
 
-      ctx.strokeStyle = GRID;
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "rgba(87, 201, 255, 0.28)";
+      ctx.lineWidth = 1;
 
       for (let x = 0; x <= COLS; x++) {
         const px = BOARD_X + x * CELL;
@@ -466,16 +599,51 @@
         ctx.lineTo(BOARD_X + COLS * CELL, py);
         ctx.stroke();
       }
+
+      ctx.restore();
     }
 
-    function drawBlock(px, py, color, alpha = 1) {
+    function drawBlock(px, py, color, alpha = 1, ghost = false) {
       ctx.save();
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = color;
-      ctx.fillRect(px + 2, py + 2, CELL - 4, CELL - 4);
-      ctx.strokeStyle = "rgba(255,255,255,0.18)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(px + 2.5, py + 2.5, CELL - 5, CELL - 5);
+
+      if (!ghost) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 18 + Math.sin(glowPulse) * 4;
+      } else {
+        ctx.shadowColor = "#9b5cff";
+        ctx.shadowBlur = 10;
+      }
+
+      const blockX = px + 3;
+      const blockY = py + 3;
+      const blockSize = CELL - 6;
+
+      const gradient = ctx.createLinearGradient(blockX, blockY, blockX + blockSize, blockY + blockSize);
+      gradient.addColorStop(0, "#ffffff");
+      gradient.addColorStop(0.18, color);
+      gradient.addColorStop(0.7, color);
+      gradient.addColorStop(1, "#050816");
+
+      ctx.fillStyle = gradient;
+      roundRect(blockX, blockY, blockSize, blockSize, 7);
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+
+      ctx.strokeStyle = "rgba(255,255,255,0.65)";
+      ctx.lineWidth = 1.5;
+      roundRect(blockX + 1, blockY + 1, blockSize - 2, blockSize - 2, 6);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(255,255,255,0.28)";
+      roundRect(blockX + 5, blockY + 5, blockSize - 12, 7, 4);
+      ctx.fill();
+
+      ctx.fillStyle = "rgba(0,0,0,0.25)";
+      roundRect(blockX + 6, blockY + blockSize - 11, blockSize - 12, 5, 3);
+      ctx.fill();
+
       ctx.restore();
     }
 
@@ -484,7 +652,13 @@
         for (let x = 0; x < COLS; x++) {
           const type = board[y][x];
           if (!type) continue;
-          drawBlock(BOARD_X + x * CELL, BOARD_Y + y * CELL, PIECE_COLORS[type], 1);
+
+          drawBlock(
+            BOARD_X + x * CELL,
+            BOARD_Y + y * CELL,
+            PIECE_COLORS[type],
+            1
+          );
         }
       }
     }
@@ -496,30 +670,52 @@
 
           const bx = piece.x + x;
           const by = drawY + y;
+
           if (by < 0) continue;
 
           const px = BOARD_X + bx * CELL;
           const py = BOARD_Y + by * CELL;
-          const color = ghost ? "#7a53b5" : PIECE_COLORS[piece.type];
-          drawBlock(px, py, color, alpha);
+          const color = ghost ? "#9b5cff" : PIECE_COLORS[piece.type];
+
+          drawBlock(px, py, color, alpha, ghost);
         }
       }
     }
 
+    function drawStatCard(label, value, x, y) {
+      ctx.save();
+
+      ctx.fillStyle = "rgba(255,255,255,0.06)";
+      ctx.strokeStyle = "rgba(0,229,255,0.24)";
+      ctx.lineWidth = 1.5;
+      roundRect(x, y, 168, 54, 14);
+      ctx.fill();
+      ctx.stroke();
+
+      drawText(label, x + 12, y + 8, 13, "left", MUTED, "bold");
+      drawText(String(value), x + 12, y + 27, 20, "left", TEXT, "bold");
+
+      ctx.restore();
+    }
+
     function drawSidebar() {
-      drawText(`High ${highScore}`, 40, 82, 26);
-      drawText(`Score ${score}`, 40, 124, 26);
-      drawText(`Lines ${lines}`, 40, 166, 26);
-      drawText(`Level ${level}`, 40, 210, 26);
+      drawGlowText("NEON", 40, 78, 28, "left", CYAN, "bold");
+      drawGlowText("TETRIS", 40, 110, 32, "left", PINK, "bold");
 
-      drawText("Next", 40, 260, 24);
-      drawMiniPiece(nextQueue[0], 48, 316, 33);
+      drawStatCard("HIGH SCORE", highScore, 40, 168);
+      drawStatCard("SCORE", score, 40, 236);
+      drawStatCard("LINES", lines, 40, 304);
+      drawStatCard("LEVEL", level, 40, 372);
 
-      drawText("Hold (C)", 40, 462, 24);
+      drawText("NEXT", 40, 456, 20, "left", CYAN, "bold");
+      drawMiniPiece(nextQueue[0], 54, 502, 30);
+
+      drawText("HOLD  C", 40, 610, 20, "left", GREEN, "bold");
+
       if (holdType) {
-        drawMiniPiece(holdType, 48, 518, 33);
+        drawMiniPiece(holdType, 54, 654, 30);
       } else {
-        drawText("(empty)", 40, 504, 24);
+        drawText("EMPTY", 54, 658, 20, "left", MUTED, "bold");
       }
     }
 
@@ -536,61 +732,164 @@
         for (let x = 0; x < cols; x++) {
           if (!matrix[y][x]) continue;
 
+          const px = offsetX + x * size;
+          const py = offsetY + y * size;
+
+          ctx.save();
+          ctx.shadowColor = PIECE_COLORS[type];
+          ctx.shadowBlur = 14;
           ctx.fillStyle = PIECE_COLORS[type];
-          ctx.fillRect(offsetX + x * size + 2, offsetY + y * size + 2, size - 4, size - 4);
-          ctx.strokeStyle = "rgba(255,255,255,0.18)";
-          ctx.strokeRect(offsetX + x * size + 2.5, offsetY + y * size + 2.5, size - 5, size - 5);
+          roundRect(px + 2, py + 2, size - 4, size - 4, 6);
+          ctx.fill();
+
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = "rgba(255,255,255,0.55)";
+          ctx.strokeRect(px + 3, py + 3, size - 6, size - 6);
+          ctx.restore();
         }
       }
     }
 
+    function drawInstructionCard(title, text, x, y, w, color) {
+      ctx.save();
+
+      ctx.fillStyle = "rgba(255,255,255,0.07)";
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 14;
+
+      roundRect(x, y, w, 58, 16);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.shadowBlur = 0;
+      drawText(title, x + 16, y + 10, 16, "left", color, "bold");
+      drawText(text, x + 16, y + 32, 15, "left", TEXT, "bold");
+
+      ctx.restore();
+    }
+
     function drawTitleScreen() {
-      ctx.fillStyle = BLACK;
-      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      drawBackground();
 
-      drawText("TETRIS", WIDTH / 2, 78, 84, "center", "#f2f2f2", "bold");
-      drawText(`High Score: ${highScore}`, 76, 182, 30, "left", TEXT);
+      ctx.save();
 
-      drawText("Press ENTER or Click to Start", 76, 280, 28, "left", TEXT);
-      drawText("ESC to Quit", 76, 318, 28, "left", TEXT);
+      ctx.fillStyle = "rgba(0,0,0,0.36)";
+      roundRect(54, 38, 652, 676, 30);
+      ctx.fill();
 
-      drawText("Controls:", 76, 378, 28, "left", TEXT);
-      drawText("Left/Right - Move", 76, 420, 28, "left", TEXT);
-      drawText("Up        - Rotate (CW)", 76, 458, 28, "left", TEXT);
-      drawText("Z         - Rotate (CCW)", 76, 496, 28, "left", TEXT);
-      drawText("Down (hold) - Soft Drop", 76, 534, 28, "left", TEXT);
-      drawText("Space     - Hard Drop", 76, 572, 28, "left", TEXT);
-      drawText("C         - Hold/Swap", 76, 610, 28, "left", TEXT);
-      drawText("P         - Pause/Resume", 76, 648, 28, "left", TEXT);
+      ctx.strokeStyle = "rgba(0,229,255,0.55)";
+      ctx.lineWidth = 3;
+      ctx.shadowColor = CYAN;
+      ctx.shadowBlur = 22;
+      roundRect(54, 38, 652, 676, 30);
+      ctx.stroke();
 
-      drawText("Ghost piece shows landing position.", 76, 708, 24, "left", TEXT);
-      drawText("Piano plays while blocks are falling.", 76, 738, 24, "left", TEXT);
+      ctx.restore();
+
+      drawGlowText("NEON TETRIS", WIDTH / 2, 72, 66, "center", CYAN, "bold");
+
+      drawText(
+        "Stack glowing blocks, clear lines, and survive as the speed rises.",
+        WIDTH / 2,
+        154,
+        19,
+        "center",
+        MUTED,
+        "bold"
+      );
+
+      drawText(`High Score: ${highScore}`, WIDTH / 2, 190, 24, "center", YELLOW, "bold");
+
+      ctx.save();
+      ctx.fillStyle = "rgba(57,255,136,0.12)";
+      ctx.strokeStyle = "rgba(57,255,136,0.85)";
+      ctx.lineWidth = 3;
+      ctx.shadowColor = GREEN;
+      ctx.shadowBlur = 20;
+      roundRect(214, 238, 332, 62, 20);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      drawText("PRESS ENTER OR CLICK TO START", WIDTH / 2, 258, 20, "center", "#ffffff", "bold");
+
+      drawText("CONTROLS", WIDTH / 2, 335, 28, "center", PINK, "bold");
+
+      drawInstructionCard("MOVE", "Left / Right Arrow", 92, 386, 270, CYAN);
+      drawInstructionCard("ROTATE", "Up Arrow or Z", 398, 386, 270, PURPLE);
+
+      drawInstructionCard("SOFT DROP", "Hold Down Arrow", 92, 466, 270, GREEN);
+      drawInstructionCard("FAST DROP", "Press Spacebar", 398, 466, 270, YELLOW);
+
+      drawInstructionCard("HOLD PIECE", "Press C", 92, 546, 270, PINK);
+      drawInstructionCard("PAUSE", "Press P", 398, 546, 270, RED);
+
+      drawText(
+        "Tip: The purple ghost piece shows where your block will land.",
+        WIDTH / 2,
+        648,
+        18,
+        "center",
+        MUTED,
+        "bold"
+      );
     }
 
     function drawCenteredOverlay(title, subtitle, subtitle2 = "") {
-      ctx.fillStyle = "rgba(0, 0, 0, 0.72)";
-      ctx.fillRect(BOARD_X, BOARD_Y + 220, COLS * CELL, 160);
+      ctx.save();
 
-      drawText(title, BOARD_X + (COLS * CELL) / 2, BOARD_Y + 245, 42, "center", "#f2f2f2", "bold");
-      drawText(subtitle, BOARD_X + (COLS * CELL) / 2, BOARD_Y + 300, 22, "center", TEXT);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.78)";
+      roundRect(BOARD_X + 10, BOARD_Y + 220, COLS * CELL - 20, 170, 22);
+      ctx.fill();
+
+      ctx.strokeStyle = CYAN;
+      ctx.lineWidth = 3;
+      ctx.shadowColor = CYAN;
+      ctx.shadowBlur = 18;
+      roundRect(BOARD_X + 10, BOARD_Y + 220, COLS * CELL - 20, 170, 22);
+      ctx.stroke();
+
+      ctx.restore();
+
+      drawGlowText(title, BOARD_X + (COLS * CELL) / 2, BOARD_Y + 248, 38, "center", PINK, "bold");
+      drawText(subtitle, BOARD_X + (COLS * CELL) / 2, BOARD_Y + 305, 20, "center", TEXT, "bold");
 
       if (subtitle2) {
-        drawText(subtitle2, BOARD_X + (COLS * CELL) / 2, BOARD_Y + 330, 22, "center", TEXT);
+        drawText(subtitle2, BOARD_X + (COLS * CELL) / 2, BOARD_Y + 336, 20, "center", MUTED, "bold");
       }
     }
 
+    function drawFlash() {
+      if (flashAlpha <= 0) return;
+
+      ctx.save();
+      ctx.globalAlpha = flashAlpha;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(BOARD_X, BOARD_Y, COLS * CELL, ROWS * CELL);
+      ctx.restore();
+    }
+
     function drawGameScreen() {
+      const shakeX = screenShake > 0 ? (Math.random() - 0.5) * screenShake : 0;
+      const shakeY = screenShake > 0 ? (Math.random() - 0.5) * screenShake : 0;
+
+      ctx.save();
+      ctx.translate(shakeX, shakeY);
+
       drawPanelFrames();
       drawGrid();
       drawBoardBlocks();
 
       if (current) {
         const ghostY = getGhostY();
-        drawPiece(current, ghostY, 0.38, true);
+        drawPiece(current, ghostY, 0.24, true);
         drawPiece(current, current.y, 1, false);
       }
 
       drawSidebar();
+      drawFlash();
 
       if (state === "paused") {
         drawCenteredOverlay("PAUSED", "Press P to Resume", "ESC for Title");
@@ -599,6 +898,8 @@
       if (state === "gameover") {
         drawCenteredOverlay("GAME OVER", "Press ENTER to Restart", "ESC for Title");
       }
+
+      ctx.restore();
     }
 
     function draw() {
@@ -610,11 +911,23 @@
     }
 
     function update(delta) {
+      glowPulse += delta * 0.008;
+
+      if (screenShake > 0) {
+        screenShake = Math.max(0, screenShake - delta * 0.04);
+      }
+
+      if (flashAlpha > 0) {
+        flashAlpha = Math.max(0, flashAlpha - delta * 0.0015);
+      }
+
       if (state !== "playing") return;
 
       dropCounter += delta;
+
       if (dropCounter >= getDropInterval()) {
         dropCounter = 0;
+
         if (!collides(current.matrix, current.x, current.y + 1)) {
           current.y += 1;
         } else {
@@ -628,8 +941,10 @@
     function frame(time = 0) {
       const delta = time - lastTime;
       lastTime = time;
+
       update(delta);
       draw();
+
       requestAnimationFrame(frame);
     }
 
@@ -654,16 +969,31 @@
     document.addEventListener("keydown", (e) => {
       const key = e.key;
 
-      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " ", "Enter", "Escape", "z", "Z", "c", "C", "p", "P"].includes(key)) {
+      const blockedKeys = [
+        "ArrowLeft",
+        "ArrowRight",
+        "ArrowUp",
+        "ArrowDown",
+        " ",
+        "Enter",
+        "Escape",
+        "z",
+        "Z",
+        "c",
+        "C",
+        "p",
+        "P"
+      ];
+
+      if (blockedKeys.includes(key)) {
         e.preventDefault();
       }
 
       if (state === "title") {
         if (key === "Enter") {
           startFromTitle();
-        } else if (key === "Escape") {
-          returnToTitle();
         }
+
         return;
       }
 
@@ -673,6 +1003,7 @@
         } else if (key === "Escape") {
           returnToTitle();
         }
+
         return;
       }
 
@@ -692,22 +1023,28 @@
         case "ArrowLeft":
           move(-1);
           break;
+
         case "ArrowRight":
           move(1);
           break;
+
         case "ArrowUp":
           rotate("cw");
           break;
+
         case "z":
         case "Z":
           rotate("ccw");
           break;
+
         case "ArrowDown":
           softDrop();
           break;
+
         case " ":
           hardDrop();
           break;
+
         case "c":
         case "C":
           hold();
@@ -717,6 +1054,7 @@
 
     canvas.addEventListener("click", () => {
       canvas.focus();
+
       if (state === "title" || state === "gameover") {
         startFromTitle();
       }

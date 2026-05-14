@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Space Delivery</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{width:100%;height:100%;overflow:hidden;background:#020617;color:white;font-family:Arial,Helvetica,sans-serif}
+    body{display:grid;place-items:center}
+    .wrap{position:relative;width:100%;height:100%;overflow:hidden;background:radial-gradient(circle at 20% 20%,rgba(0,229,255,.14),transparent 30%),radial-gradient(circle at 80% 25%,rgba(255,60,172,.13),transparent 32%),linear-gradient(180deg,#020617,#07142e 58%,#12051f)}
+    canvas{display:block;width:100%;height:100%;background:transparent;cursor:crosshair}
+    .screen{position:absolute;inset:0;z-index:10;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 20% 18%,rgba(0,229,255,.20),transparent 30%),radial-gradient(circle at 80% 22%,rgba(255,60,172,.16),transparent 32%),rgba(0,0,0,.72);backdrop-filter:blur(8px)}
+    .hidden{display:none}
+    .box{width:min(920px,94vw);padding:42px 34px;border-radius:32px;text-align:center;background:linear-gradient(180deg,rgba(8,14,34,.94),rgba(3,5,20,.94));border:1px solid rgba(255,255,255,.15);box-shadow:0 0 30px rgba(0,229,255,.22),0 0 60px rgba(255,60,172,.13),0 28px 80px rgba(0,0,0,.55)}
+    h1{font-size:clamp(48px,7vw,88px);line-height:.95;font-weight:900;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;text-shadow:0 0 12px rgba(255,255,255,.42),0 0 30px rgba(0,229,255,.42),0 0 58px rgba(255,60,172,.28)}
+    .sub{max-width:760px;margin:0 auto 26px;color:#dbe6ff;font-size:18px;font-weight:800;line-height:1.55}
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(170px,1fr));gap:14px;max-width:800px;margin:0 auto 28px}
+    .card{text-align:left;padding:15px 16px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}
+    .card strong{display:block;color:#39ff88;font-size:14px;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}.card span{font-weight:900;line-height:1.35;font-size:15px;color:white}
+    .row{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:24px}
+    button{min-width:220px;height:66px;border:none;border-radius:20px;cursor:pointer;font-size:20px;font-weight:900;color:#041226;background:linear-gradient(135deg,#39ff88,#00e5ff);box-shadow:0 14px 28px rgba(0,0,0,.32),0 0 26px rgba(57,255,136,.25);transition:.2s}
+    button:hover{transform:translateY(-2px) scale(1.03)}button.secondary{background:linear-gradient(135deg,#fff,#dce9ff)}button.warning{background:linear-gradient(135deg,#ffd84d,#ff9f1c)}
+    .ship-preview{font-size:72px;margin:8px auto 22px;filter:drop-shadow(0 0 22px rgba(0,229,255,.35))}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}.box{padding:30px 22px}button{min-width:190px;height:58px;font-size:17px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <canvas id="game" width="1400" height="850"></canvas>
+
+    <div id="startScreen" class="screen">
+      <div class="box">
+        <h1>Space Delivery</h1>
+        <p class="sub">Fly a neon courier rocket, deliver packages between planets, dodge asteroids, collect fuel, and survive deep-space delivery routes.</p>
+        <div class="ship-preview">🚀📦</div>
+        <div class="grid">
+          <div class="card"><strong>Move</strong><span>WASD or Arrow Keys</span></div>
+          <div class="card"><strong>Boost</strong><span>Hold Space for speed</span></div>
+          <div class="card"><strong>Goal</strong><span>Reach the glowing planet</span></div>
+          <div class="card"><strong>Fuel</strong><span>Collect blue fuel cells</span></div>
+          <div class="card"><strong>Danger</strong><span>Avoid asteroids and mines</span></div>
+          <div class="card"><strong>Score</strong><span>Deliver packages fast</span></div>
+        </div>
+        <div class="row"><button id="startBtn">Start Delivery</button></div>
+      </div>
+    </div>
+
+    <div id="endScreen" class="screen hidden">
+      <div class="box">
+        <h1 id="endTitle">Mission Failed</h1>
+        <p id="endText" class="sub">Your ship was destroyed.</p>
+        <div class="row">
+          <button id="restartBtn" class="warning">Play Again</button>
+          <button id="menuBtn" class="secondary">Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const startScreen=document.getElementById('startScreen'),endScreen=document.getElementById('endScreen'),endTitle=document.getElementById('endTitle'),endText=document.getElementById('endText');
+const W=canvas.width,H=canvas.height,keys={};
+let state='menu',frame=0,route=1,score=0,best=Number(localStorage.getItem('space_delivery_best')||0),fuel=100,packages=0,targetPackages=5,shake=0,flash=0;
+let stars=[],planets=[],asteroids=[],mines=[],fuelCells=[],particles=[],packagesFx=[],audioCtx=null;
+const ship={x:180,y:H/2,vx:0,vy:0,r:24,angle:0,shield:100,inv:0};
+
+function tone(freq,dur=.08,vol=.04,type='sine'){try{if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();const n=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(freq,n);g.gain.setValueAtTime(.0001,n);g.gain.exponentialRampToValueAtTime(vol,n+.01);g.gain.exponentialRampToValueAtTime(.0001,n+dur);o.connect(g);g.connect(audioCtx.destination);o.start(n);o.stop(n+dur+.03)}catch(e){}}
+function rand(a,b){return Math.random()*(b-a)+a}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function initStars(){stars=[];for(let i=0;i<260;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:rand(.4,2.1),speed:rand(.2,1.4),a:rand(.25,.9)})}
+function startGame(){state='play';startScreen.classList.add('hidden');endScreen.classList.add('hidden');route=1;score=0;packages=0;targetPackages=5;resetRoute();tone(620,.14,.06,'triangle')}
+function resetRoute(){ship.x=130;ship.y=H/2;ship.vx=0;ship.vy=0;ship.angle=0;ship.shield=100;ship.inv=60;fuel=100;asteroids=[];mines=[];fuelCells=[];particles=[];packagesFx=[];planets=[{x:110,y:H/2,r:58,color:'#67d8ff',name:'Start'},{x:W-135,y:rand(140,H-160),r:70,color:route%2?'#39ff88':'#ff7bff',name:'Drop Zone'}];spawnObstacles();}
+function spawnObstacles(){const count=9+route*2;for(let i=0;i<count;i++)asteroids.push({x:rand(320,W-280),y:rand(90,H-90),r:rand(22,46),vx:rand(-1.7,1.7),vy:rand(-1.2,1.2),rot:rand(0,6.28),spin:rand(-.03,.03)});for(let i=0;i<Math.min(8,route+2);i++)mines.push({x:rand(360,W-330),y:rand(100,H-100),r:22,p:rand(0,6.28)});for(let i=0;i<6;i++)fuelCells.push({x:rand(280,W-260),y:rand(100,H-100),r:16,taken:false,p:rand(0,6.28)})}
+function endGame(win){state='end';if(score>best){best=score;localStorage.setItem('space_delivery_best',String(best))}endTitle.textContent=win?'All Packages Delivered':'Mission Failed';endText.textContent=win?`Score: ${score} | Best: ${best}. Space customers are happy.`:`Score: ${score} | Best: ${best}. Your delivery ship is out.`;endScreen.classList.remove('hidden');shake=win?10:16;flash=.22;tone(win?900:120,.25,.08,win?'triangle':'sawtooth')}
+function goMenu(){state='menu';startScreen.classList.remove('hidden');endScreen.classList.add('hidden')}
+function nextRoute(){packages++;score+=1000+Math.floor(fuel*7)+route*150;spawnBurst(planets[1].x,planets[1].y,'#39ff88',42);tone(980,.12,.07,'triangle');if(packages>=targetPackages){endGame(true);return}route++;resetRoute();}
+function update(){frame++;updateStars();updateParticles();if(state!=='play')return;updateShip();updateObstacles();checkCollisions();if(shake>0)shake*=.9;if(flash>0)flash*=.88}
+function updateStars(){for(const s of stars){s.x-=s.speed;if(s.x<-5){s.x=W+5;s.y=Math.random()*H}}}
+function updateShip(){const up=keys.ArrowUp||keys.w||keys.W,down=keys.ArrowDown||keys.s||keys.S,left=keys.ArrowLeft||keys.a||keys.A,right=keys.ArrowRight||keys.d||keys.D,boost=keys[' '];let ax=0,ay=0;if(up)ay-=.32;if(down)ay+=.32;if(left)ax-=.32;if(right)ax+=.32;if(boost&&fuel>0){ax+=.16;ship.vx+=.12;fuel-=.18;spawnTrail()}fuel-=.025;ship.vx+=ax;ship.vy+=ay;ship.vx*=.986;ship.vy*=.986;ship.vx=clamp(ship.vx,-7.5,9.5);ship.vy=clamp(ship.vy,-7.5,7.5);ship.x+=ship.vx;ship.y+=ship.vy;ship.x=clamp(ship.x,35,W-35);ship.y=clamp(ship.y,35,H-35);ship.angle=Math.atan2(ship.vy,Math.max(2,ship.vx));if(ship.inv>0)ship.inv--;if(fuel<=0)endGame(false)}
+function updateObstacles(){for(const a of asteroids){a.x+=a.vx;a.y+=a.vy;a.rot+=a.spin;if(a.x<a.r||a.x>W-a.r)a.vx*=-1;if(a.y<a.r||a.y>H-a.r)a.vy*=-1}for(const m of mines)m.p+=.04;for(const f of fuelCells)f.p+=.06}
+function checkCollisions(){const drop=planets[1];if(Math.hypot(ship.x-drop.x,ship.y-drop.y)<drop.r+ship.r*.6)nextRoute();for(const f of fuelCells){if(!f.taken&&Math.hypot(ship.x-f.x,ship.y-f.y)<ship.r+f.r){f.taken=true;fuel=clamp(fuel+32,0,100);score+=100;spawnBurst(f.x,f.y,'#00e5ff',18);tone(760,.08,.05,'sine')}}for(const a of asteroids){if(Math.hypot(ship.x-a.x,ship.y-a.y)<ship.r+a.r*.75)damageShip(a.x,a.y,28)}for(const m of mines){if(Math.hypot(ship.x-m.x,ship.y-m.y)<ship.r+m.r){damageShip(m.x,m.y,44);explodeMine(m)}}}
+function damageShip(x,y,d){if(ship.inv>0)return;ship.shield-=d;ship.inv=45;shake=12;flash=.18;spawnBurst(x,y,'#ff3c6f',34);tone(180,.12,.07,'sawtooth');ship.vx*=-.7;ship.vy*=-.7;if(ship.shield<=0)endGame(false)}
+function explodeMine(m){m.x=rand(360,W-330);m.y=rand(100,H-100);m.p=0}
+function spawnTrail(){particles.push({x:ship.x-ship.r-8,y:ship.y+rand(-8,8),vx:rand(-3,-1),vy:rand(-1,1),life:rand(16,28),max:28,r:rand(3,7),color:'#00e5ff'})}
+function spawnBurst(x,y,color,count){for(let i=0;i<count;i++){const a=rand(0,Math.PI*2),s=rand(1,5);particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(18,42),max:42,r:rand(2,5),color})}}
+function updateParticles(){for(const p of particles.slice()){p.x+=p.vx;p.y+=p.vy;p.vx*=.985;p.vy*=.985;p.life--;if(p.life<=0)particles.splice(particles.indexOf(p),1)}}
+function draw(){const sx=shake>0?rand(-shake,shake):0,sy=shake>0?rand(-shake,shake):0;ctx.save();ctx.translate(sx,sy);drawBg();drawPlanets();drawFuelCells();drawObstacles();drawShip();drawParticles();ctx.restore();drawHud();if(flash>0){ctx.save();ctx.globalAlpha=flash;ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.restore()}}
+function drawBg(){const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#020617');g.addColorStop(.55,'#07142e');g.addColorStop(1,'#12051f');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);for(const s of stars){ctx.save();ctx.globalAlpha=s.a;ctx.fillStyle='#fff';ctx.shadowColor='#fff';ctx.shadowBlur=6;circle(s.x,s.y,s.r);ctx.restore()}ctx.strokeStyle='rgba(0,229,255,.05)';for(let x=0;x<W;x+=55){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=55){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}}
+function drawPlanets(){for(const p of planets){ctx.save();ctx.shadowColor=p.color;ctx.shadowBlur=24;const gr=ctx.createRadialGradient(p.x-20,p.y-25,5,p.x,p.y,p.r);gr.addColorStop(0,'#fff');gr.addColorStop(.3,p.color);gr.addColorStop(1,'#14203a');ctx.fillStyle=gr;circle(p.x,p.y,p.r);ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='#fff';ctx.font='900 16px Arial';ctx.textAlign='center';ctx.fillText(p.name,p.x,p.y+p.r+24);ctx.restore()}}
+function drawFuelCells(){for(const f of fuelCells){if(f.taken)continue;ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.p);ctx.shadowColor='#00e5ff';ctx.shadowBlur=18;ctx.fillStyle='#00e5ff';roundRect(-12,-18,24,36,8);ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(-5,-10,10,20);ctx.restore()}}
+function drawObstacles(){for(const a of asteroids){ctx.save();ctx.translate(a.x,a.y);ctx.rotate(a.rot);ctx.fillStyle='#7a7c86';ctx.shadowColor='#777';ctx.shadowBlur=8;ctx.beginPath();for(let i=0;i<9;i++){const ang=i*Math.PI*2/9,rr=a.r*rand(.72,1.05);const x=Math.cos(ang)*rr,y=Math.sin(ang)*rr;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.closePath();ctx.fill();ctx.strokeStyle='rgba(0,0,0,.45)';ctx.stroke();ctx.restore()}for(const m of mines){ctx.save();ctx.translate(m.x,m.y);ctx.rotate(m.p);ctx.shadowColor='#ff3c6f';ctx.shadowBlur=18;ctx.fillStyle='#3b1020';circle(0,0,m.r);ctx.strokeStyle='#ff3c6f';ctx.lineWidth=4;for(let i=0;i<8;i++){ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(i*Math.PI/4)*(m.r+10),Math.sin(i*Math.PI/4)*(m.r+10));ctx.stroke()}ctx.restore()}}
+function drawShip(){ctx.save();ctx.translate(ship.x,ship.y);ctx.rotate(ship.angle);if(ship.inv>0&&Math.floor(frame/5)%2===0)ctx.globalAlpha=.55;ctx.shadowColor='#00e5ff';ctx.shadowBlur=18;ctx.fillStyle='#dbe6ff';ctx.beginPath();ctx.moveTo(34,0);ctx.lineTo(-22,-18);ctx.lineTo(-12,0);ctx.lineTo(-22,18);ctx.closePath();ctx.fill();ctx.fillStyle='#00e5ff';circle(6,0,8);ctx.fillStyle='#ff3c6f';ctx.beginPath();ctx.moveTo(-24,-12);ctx.lineTo(-44,0);ctx.lineTo(-24,12);ctx.fill();ctx.restore()}
+function drawParticles(){for(const p of particles){ctx.save();ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.shadowColor=p.color;ctx.shadowBlur=10;circle(p.x,p.y,p.r);ctx.restore()}}
+function drawHud(){ctx.save();ctx.fillStyle='rgba(0,0,0,.5)';roundRect(18,16,430,148,18);ctx.fill();ctx.strokeStyle='rgba(0,229,255,.35)';ctx.stroke();text(`Route ${route}`,38,30,24,'#fff','left','900');text(`Packages: ${packages}/${targetPackages}`,38,62,18,'#ffd84d','left','900');text(`Score: ${score}  Best: ${best}`,38,90,18,'#fff','left','700');bar(520,28,280,18,fuel/100,'#00e5ff');text('FUEL',520,52,14,'#dbe6ff','left','900');bar(835,28,250,18,ship.shield/100,'#39ff88');text('SHIP SHIELD',835,52,14,'#dbe6ff','left','900');text('Deliver to the glowing planet →',W/2,28,20,'#fff','center','900');ctx.restore()}
+function bar(x,y,w,h,r,c){r=clamp(r,0,1);ctx.fillStyle='rgba(0,0,0,.55)';roundRect(x,y,w,h,h/2);ctx.fill();ctx.fillStyle=c;roundRect(x+2,y+2,(w-4)*r,h-4,h/2);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.35)';ctx.stroke()}
+function circle(x,y,r){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
+function roundRect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath()}
+function text(s,x,y,size,c='white',align='left',weight='normal'){ctx.fillStyle=c;ctx.font=`${weight} ${size}px Arial`;ctx.textAlign=align;ctx.textBaseline='top';ctx.fillText(s,x,y)}
+function loop(){update();draw();requestAnimationFrame(loop)}
+
+document.addEventListener('keydown',e=>{keys[e.key]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();if(e.key==='Enter'&&(state==='menu'||state==='end'))startGame();if(e.key==='Escape')goMenu()});
+document.addEventListener('keyup',e=>keys[e.key]=false);
+canvas.addEventListener('mousedown',()=>{if(state==='menu')startGame(); if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume()});
+document.getElementById('startBtn').onclick=startGame;document.getElementById('restartBtn').onclick=startGame;document.getElementById('menuBtn').onclick=goMenu;
+initStars();requestAnimationFrame(loop);
+</script>
+</body>
+</html>

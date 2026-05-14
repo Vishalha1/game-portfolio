@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Snake - Auto Harder</title>
+  <title>Snake - Neon Space</title>
+
   <style>
     * {
       box-sizing: border-box;
@@ -11,7 +12,8 @@
       padding: 0;
     }
 
-    html, body {
+    html,
+    body {
       width: 100%;
       height: 100%;
       overflow: hidden;
@@ -19,7 +21,7 @@
 
     body {
       font-family: Arial, Helvetica, sans-serif;
-      background: #000;
+      background: #020617;
       color: white;
     }
 
@@ -28,26 +30,35 @@
       height: 100%;
       display: flex;
       flex-direction: column;
-      background: #000;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(0, 229, 255, 0.16), transparent 30%),
+        radial-gradient(circle at 80% 30%, rgba(255, 60, 172, 0.14), transparent 32%),
+        radial-gradient(circle at 50% 90%, rgba(57, 255, 136, 0.10), transparent 36%),
+        #020617;
       overflow: hidden;
     }
 
     .topbar {
       flex-shrink: 0;
-      padding: 10px 14px;
-      background: #090909;
-      border-bottom: 1px solid #222;
+      padding: 12px 16px;
+      background: linear-gradient(90deg, rgba(3, 7, 18, 0.96), rgba(8, 19, 48, 0.96));
+      border-bottom: 1px solid rgba(0, 229, 255, 0.22);
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 10px;
       flex-wrap: wrap;
+      box-shadow: 0 0 22px rgba(0, 229, 255, 0.12);
     }
 
     .title {
-      font-size: 20px;
-      font-weight: bold;
-      color: #f2f2f2;
+      font-size: 22px;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: 1px;
+      text-shadow:
+        0 0 8px rgba(255, 255, 255, 0.28),
+        0 0 18px rgba(0, 229, 255, 0.35);
     }
 
     .controls {
@@ -58,22 +69,22 @@
 
     .key-pill {
       padding: 7px 11px;
-      border: 1px solid #3a3a3a;
+      border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: 999px;
-      background: #111;
+      background: rgba(255, 255, 255, 0.08);
       color: #efefef;
       font-size: 12px;
       font-weight: bold;
       white-space: nowrap;
+      box-shadow: 0 0 12px rgba(0, 229, 255, 0.06);
     }
 
     .board-wrap {
       flex: 1;
       min-height: 0;
-      background: #000;
       display: grid;
       place-items: center;
-      padding: 8px;
+      padding: 10px;
       overflow: hidden;
       position: relative;
     }
@@ -85,16 +96,23 @@
       width: auto;
       height: auto;
       background: #000;
-      border: 1px solid #1e1e1e;
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      border-radius: 16px;
+      box-shadow:
+        0 0 24px rgba(0, 229, 255, 0.22),
+        0 0 54px rgba(155, 92, 255, 0.14),
+        0 0 80px rgba(255, 60, 172, 0.10);
     }
 
     .screen-overlay {
       position: absolute;
-      inset: 8px;
+      inset: 10px;
       display: grid;
       place-items: center;
-      background: rgba(0, 0, 0, 0.45);
+      background: rgba(0, 0, 0, 0.48);
       pointer-events: none;
+      border-radius: 16px;
+      backdrop-filter: blur(4px);
     }
 
     .screen-overlay.hidden {
@@ -102,42 +120,49 @@
     }
 
     .overlay-box {
-      width: min(520px, 92%);
-      background: rgba(10, 10, 10, 0.92);
-      border: 1px solid #2a2a2a;
-      border-radius: 18px;
-      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
-      padding: 24px 22px;
+      width: min(560px, 92%);
+      background: linear-gradient(180deg, rgba(8, 14, 34, 0.92), rgba(3, 5, 18, 0.92));
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 22px;
+      box-shadow:
+        0 0 22px rgba(0, 229, 255, 0.18),
+        0 18px 45px rgba(0, 0, 0, 0.45);
+      padding: 26px 24px;
       text-align: center;
       pointer-events: auto;
     }
 
     .overlay-box h1 {
-      font-size: 34px;
+      font-size: 42px;
       margin-bottom: 10px;
-      color: #f8f8f8;
+      color: #ffffff;
+      text-shadow:
+        0 0 8px rgba(255, 255, 255, 0.35),
+        0 0 20px rgba(57, 255, 136, 0.32),
+        0 0 34px rgba(0, 229, 255, 0.24);
     }
 
     .overlay-box p {
-      color: #d3d3d3;
+      color: #dbe6ff;
       line-height: 1.6;
       font-size: 15px;
       margin-bottom: 14px;
+      font-weight: 700;
     }
 
     .instructions-box {
       text-align: left;
-      background: #0e0e0e;
-      border: 1px solid #232323;
-      border-radius: 14px;
-      padding: 14px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 15px;
       margin: 16px 0;
     }
 
     .instructions-box h2 {
       font-size: 18px;
       margin-bottom: 10px;
-      color: #ffffff;
+      color: #39ff88;
     }
 
     .instructions-box ul {
@@ -145,7 +170,7 @@
     }
 
     .instructions-box li {
-      color: #d7d7d7;
+      color: #e7eeff;
       margin-bottom: 8px;
       line-height: 1.45;
       font-size: 14px;
@@ -153,26 +178,28 @@
 
     .start-btn {
       border: none;
-      border-radius: 14px;
-      padding: 12px 20px;
-      font-size: 15px;
-      font-weight: bold;
+      border-radius: 16px;
+      padding: 13px 22px;
+      font-size: 16px;
+      font-weight: 900;
       cursor: pointer;
       color: #04170e;
-      background: linear-gradient(135deg, #39ff88, #00d46a);
-      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+      background: linear-gradient(135deg, #39ff88, #00e5ff);
+      box-shadow:
+        0 10px 22px rgba(0, 0, 0, 0.28),
+        0 0 18px rgba(57, 255, 136, 0.24);
       transition: transform 0.2s ease, opacity 0.2s ease;
     }
 
     .start-btn:hover {
-      transform: translateY(-2px);
+      transform: translateY(-2px) scale(1.03);
       opacity: 0.95;
     }
 
     .overlay-hint {
       margin-top: 12px;
       font-size: 13px;
-      color: #bcbcbc;
+      color: #cbd7f0;
     }
 
     @media (max-width: 700px) {
@@ -190,15 +217,16 @@
       }
 
       .overlay-box h1 {
-        font-size: 28px;
+        font-size: 30px;
       }
     }
   </style>
 </head>
+
 <body>
   <div class="game-shell">
     <div class="topbar">
-      <div class="title">Snake - Auto Harder</div>
+      <div class="title">Snake - Neon Space</div>
 
       <div class="controls">
         <div class="key-pill">Arrow Keys = Move</div>
@@ -215,7 +243,7 @@
         <div class="overlay-box">
           <h1>Snake</h1>
           <p>
-            Control a glowing rainbow snake, eat apples, and survive as the game gets faster.
+            Control a glowing rainbow snake, eat apples, and survive as the speed gets faster.
           </p>
 
           <div class="instructions-box">
@@ -268,6 +296,98 @@
 
     let lastTickTime = 0;
     let hueShift = 0;
+
+    const stars = [];
+    const nebulaClouds = [];
+
+    function makeSpaceBackground() {
+      stars.length = 0;
+      nebulaClouds.length = 0;
+
+      for (let i = 0; i < 160; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          r: Math.random() * 1.8 + 0.4,
+          speed: Math.random() * 0.35 + 0.08,
+          alpha: Math.random() * 0.8 + 0.2
+        });
+      }
+
+      for (let i = 0; i < 6; i++) {
+        nebulaClouds.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          r: Math.random() * 170 + 90,
+          color: i % 2 === 0 ? "0, 229, 255" : "255, 60, 172",
+          alpha: Math.random() * 0.08 + 0.04
+        });
+      }
+    }
+
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function drawSpaceBackground() {
+      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bg.addColorStop(0, "#020617");
+      bg.addColorStop(0.45, "#061b3d");
+      bg.addColorStop(1, "#12051f");
+
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (const cloud of nebulaClouds) {
+        const grad = ctx.createRadialGradient(
+          cloud.x,
+          cloud.y,
+          0,
+          cloud.x,
+          cloud.y,
+          cloud.r
+        );
+
+        grad.addColorStop(0, `rgba(${cloud.color}, ${cloud.alpha})`);
+        grad.addColorStop(1, `rgba(${cloud.color}, 0)`);
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(cloud.x, cloud.y, cloud.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      for (const star of stars) {
+        ctx.save();
+        ctx.globalAlpha = star.alpha;
+        ctx.fillStyle = "#ffffff";
+        ctx.shadowColor = "#ffffff";
+        ctx.shadowBlur = 6;
+
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+
+        star.y += star.speed;
+
+        if (star.y > canvas.height + 5) {
+          star.y = -5;
+          star.x = Math.random() * canvas.width;
+        }
+      }
+    }
 
     function placeFood() {
       let valid = false;
@@ -332,6 +452,7 @@
       if (score > 0 || gameOver) {
         lastScore = score;
       }
+
       startGame();
     }
 
@@ -376,7 +497,9 @@
     }
 
     function drawGrid() {
-      ctx.strokeStyle = "#4a4a4a";
+      ctx.save();
+
+      ctx.strokeStyle = "rgba(0, 229, 255, 0.17)";
       ctx.lineWidth = 1;
 
       for (let x = 0; x <= canvas.width; x += GRID) {
@@ -392,6 +515,80 @@
         ctx.lineTo(canvas.width, y);
         ctx.stroke();
       }
+
+      ctx.strokeStyle = "rgba(255, 60, 172, 0.32)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+      ctx.restore();
+    }
+
+    function drawSnakeFace(px, py) {
+      let eye1 = {};
+      let eye2 = {};
+      let mouth = {};
+
+      if (direction.x === 1) {
+        eye1 = { x: px + 17, y: py + 7 };
+        eye2 = { x: px + 17, y: py + 17 };
+        mouth = { x1: px + 20, y1: py + 12, x2: px + 24, y2: py + 12 };
+      } else if (direction.x === -1) {
+        eye1 = { x: px + 8, y: py + 7 };
+        eye2 = { x: px + 8, y: py + 17 };
+        mouth = { x1: px + 5, y1: py + 12, x2: px + 1, y2: py + 12 };
+      } else if (direction.y === -1) {
+        eye1 = { x: px + 7, y: py + 8 };
+        eye2 = { x: px + 17, y: py + 8 };
+        mouth = { x1: px + 12, y1: py + 5, x2: px + 12, y2: py + 1 };
+      } else {
+        eye1 = { x: px + 7, y: py + 17 };
+        eye2 = { x: px + 17, y: py + 17 };
+        mouth = { x1: px + 12, y1: py + 20, x2: px + 12, y2: py + 24 };
+      }
+
+      ctx.save();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.shadowColor = "#ffffff";
+      ctx.shadowBlur = 5;
+
+      ctx.beginPath();
+      ctx.arc(eye1.x, eye1.y, 3.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(eye2.x, eye2.y, 3.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#000000";
+
+      ctx.beginPath();
+      ctx.arc(eye1.x, eye1.y, 1.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(eye2.x, eye2.y, 1.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "#111111";
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+
+      ctx.beginPath();
+      ctx.moveTo(mouth.x1, mouth.y1);
+      ctx.lineTo(mouth.x2, mouth.y2);
+      ctx.stroke();
+
+      ctx.strokeStyle = "#ff6bcb";
+      ctx.lineWidth = 1.5;
+
+      ctx.beginPath();
+      ctx.moveTo(mouth.x1, mouth.y1);
+      ctx.lineTo(mouth.x2, mouth.y2);
+      ctx.stroke();
+
+      ctx.restore();
     }
 
     function drawSnake() {
@@ -400,28 +597,97 @@
         const py = segment.y * GRID;
 
         const hue = (hueShift + index * 24) % 360;
-        const color = `hsl(${hue}, 100%, 50%)`;
+        const color = `hsl(${hue}, 100%, 52%)`;
+
+        ctx.save();
 
         ctx.shadowColor = color;
-        ctx.shadowBlur = 18;
-        ctx.fillStyle = color;
-        ctx.fillRect(px + 2, py + 2, GRID - 4, GRID - 4);
+        ctx.shadowBlur = index === 0 ? 25 : 16;
+
+        const gradient = ctx.createLinearGradient(px, py, px + GRID, py + GRID);
+        gradient.addColorStop(0, "#ffffff");
+        gradient.addColorStop(0.25, color);
+        gradient.addColorStop(1, "#04170e");
+
+        ctx.fillStyle = gradient;
+
+        if (index === 0) {
+          roundRect(px + 1, py + 1, GRID - 2, GRID - 2, 9);
+        } else {
+          roundRect(px + 3, py + 3, GRID - 6, GRID - 6, 7);
+        }
+
+        ctx.fill();
+
         ctx.shadowBlur = 0;
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.58)";
+        ctx.lineWidth = index === 0 ? 2 : 1;
+
+        if (index === 0) {
+          roundRect(px + 2, py + 2, GRID - 4, GRID - 4, 8);
+        } else {
+          roundRect(px + 4, py + 4, GRID - 8, GRID - 8, 6);
+        }
+
+        ctx.stroke();
+
+        ctx.restore();
+
+        if (index === 0) {
+          drawSnakeFace(px, py);
+        }
       });
     }
 
     function drawFood() {
       const px = food.x * GRID;
       const py = food.y * GRID;
+      const cx = px + GRID / 2;
+      const cy = py + GRID / 2;
 
-      ctx.fillStyle = "#ff2d2d";
+      ctx.save();
+
       ctx.shadowColor = "#ff2d2d";
-      ctx.shadowBlur = 12;
-      ctx.fillRect(px + 3, py + 3, GRID - 6, GRID - 6);
+      ctx.shadowBlur = 18;
+
+      const appleGradient = ctx.createRadialGradient(cx - 4, cy - 5, 2, cx, cy, 13);
+      appleGradient.addColorStop(0, "#ffffff");
+      appleGradient.addColorStop(0.25, "#ff6b6b");
+      appleGradient.addColorStop(1, "#b30000");
+
+      ctx.fillStyle = appleGradient;
+      ctx.beginPath();
+      ctx.arc(cx, cy + 1, 9, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.shadowBlur = 0;
+
+      ctx.fillStyle = "#39ff88";
+      ctx.beginPath();
+      ctx.ellipse(cx + 5, cy - 10, 5, 2.8, -0.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "#5b2b10";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 6);
+      ctx.lineTo(cx + 2, cy - 12);
+      ctx.stroke();
+
+      ctx.restore();
     }
 
     function drawHud() {
+      ctx.save();
+
+      ctx.fillStyle = "rgba(0, 0, 0, 0.42)";
+      roundRect(8, 8, 278, 82, 14);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(0, 229, 255, 0.45)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
       ctx.fillStyle = "#f5f5f5";
       ctx.font = "bold 16px Arial";
       ctx.textAlign = "left";
@@ -429,31 +695,46 @@
       const applesUntilFaster = APPLES_PER_LEVEL - (applesEaten % APPLES_PER_LEVEL || APPLES_PER_LEVEL);
       const nextText = applesEaten === 0 ? APPLES_PER_LEVEL : applesUntilFaster;
 
-      ctx.fillText(`Score: ${score}`, 12, 26);
-      ctx.fillText(`Last: ${lastScore}`, 12, 52);
-      ctx.fillText(`Speed: ${speedMs}ms  Next+: ${nextText} apples`, 12, 78);
+      ctx.fillText(`Score: ${score}`, 18, 30);
+      ctx.fillText(`Last: ${lastScore}`, 18, 56);
+      ctx.fillText(`Speed: ${speedMs}ms  Next+: ${nextText} apples`, 118, 30);
+
+      ctx.restore();
     }
 
     function drawCenterMessage(title, subtitle) {
+      ctx.save();
+
       ctx.textAlign = "center";
 
-      ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
-      ctx.fillRect(0, canvas.height / 2 - 55, canvas.width, 110);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.66)";
+      roundRect(115, canvas.height / 2 - 62, canvas.width - 230, 124, 20);
+      ctx.fill();
 
-      ctx.fillStyle = "#efefef";
-      ctx.font = "bold 24px Arial";
-      ctx.fillText(title, canvas.width / 2, canvas.height / 2 - 6);
+      ctx.strokeStyle = "rgba(57, 255, 136, 0.75)";
+      ctx.lineWidth = 2;
+      ctx.shadowColor = "#39ff88";
+      ctx.shadowBlur = 14;
+      roundRect(115, canvas.height / 2 - 62, canvas.width - 230, 124, 20);
+      ctx.stroke();
 
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 26px Arial";
+      ctx.fillText(title, canvas.width / 2, canvas.height / 2 - 8);
+
+      ctx.fillStyle = "#dbe6ff";
       ctx.font = "bold 16px Arial";
       ctx.fillText(subtitle, canvas.width / 2, canvas.height / 2 + 24);
+
+      ctx.restore();
     }
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = "#000";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+      drawSpaceBackground();
       drawGrid();
       drawFood();
       drawSnake();
@@ -484,6 +765,7 @@
       }
 
       hueShift = (hueShift + 2) % 360;
+
       requestAnimationFrame(gameLoop);
     }
 
@@ -501,7 +783,7 @@
         e.preventDefault();
       }
 
-      if (!started && (e.key === "Enter")) {
+      if (!started && e.key === "Enter") {
         startGame();
         return;
       }
@@ -529,6 +811,7 @@
 
     startBtn.addEventListener("click", startGame);
 
+    makeSpaceBackground();
     showStartScreen();
     requestAnimationFrame(gameLoop);
   </script>
