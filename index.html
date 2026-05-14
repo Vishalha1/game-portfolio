@@ -475,6 +475,40 @@
       box-shadow: 0 0 12px rgba(0,229,255,0.05);
     }
 
+    #stageArea:fullscreen {
+      width: 100vw;
+      height: 100vh;
+      min-height: 100vh;
+      background: #000;
+    }
+
+    #stageArea:fullscreen #stage {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      background: #000;
+    }
+
+    #stageArea:fullscreen .placeholder {
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+    }
+
+    #stageArea:-webkit-full-screen {
+      width: 100vw;
+      height: 100vh;
+      min-height: 100vh;
+      background: #000;
+    }
+
+    #stageArea:-webkit-full-screen #stage {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      background: #000;
+    }
+
     @media (max-width: 1100px) {
       .layout {
         grid-template-columns: 1fr;
@@ -549,6 +583,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="page">
     <header class="topbar">
@@ -588,6 +623,11 @@
           <button class="game-btn" type="button" data-path="./Alien_shooter.html">
             <strong>Alien Shooter</strong>
             <small>Blast enemies in a glowing sci-fi arcade battle</small>
+          </button>
+
+          <button class="game-btn" type="button" data-path="./fruit_match3.html">
+            <strong>Fruit Match 3D</strong>
+            <small>Swap fruits, make combos, and play a colorful 3D fruit puzzle game</small>
           </button>
         </nav>
       </aside>
@@ -655,6 +695,7 @@
 
   <script>
     const stage = document.getElementById("stage");
+    const stageArea = document.getElementById("stageArea");
     const currentGame = document.getElementById("currentGame");
     const placeholder = document.getElementById("placeholder");
     const homeBtn = document.getElementById("homeBtn");
@@ -695,24 +736,39 @@
       stage.style.display = "none";
       placeholder.style.display = "grid";
       currentGame.textContent = "None selected";
+
       gameButtons.forEach(button => button.removeAttribute("aria-current"));
+
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      }
+
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
     async function toggleFullscreen() {
       try {
         if (!document.fullscreenElement) {
-          await document.documentElement.requestFullscreen();
+          await stageArea.requestFullscreen();
         } else {
           await document.exitFullscreen();
         }
       } catch (error) {
         console.error("Fullscreen error:", error);
+        alert("Your browser blocked fullscreen mode. Try clicking the Full Screen button again.");
       }
     }
 
     function updateFullscreenButton() {
-      fullscreenBtn.textContent = document.fullscreenElement ? "Exit Full Screen" : "Full Screen";
+      if (document.fullscreenElement) {
+        fullscreenBtn.textContent = "Exit Full Screen";
+        stage.style.height = "100vh";
+        stageArea.style.minHeight = "100vh";
+      } else {
+        fullscreenBtn.textContent = "Full Screen";
+        stage.style.height = "";
+        stageArea.style.minHeight = "";
+      }
     }
 
     fullscreenBtn.addEventListener("click", toggleFullscreen);
