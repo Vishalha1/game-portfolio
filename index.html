@@ -3,501 +3,360 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Vishal's Game Portfolio</title>
 
   <style>
     * {
       box-sizing: border-box;
+    }
+
+    body {
       margin: 0;
-      padding: 0;
-    }
-
-    html,
-    body {
-      width: 100%;
-      min-height: 100%;
       font-family: Arial, Helvetica, sans-serif;
-      color: #ffffff;
-      background: #020617;
-    }
-
-    body {
-      overflow-x: hidden;
       background:
-        radial-gradient(circle at 15% 15%, rgba(0, 229, 255, 0.18), transparent 28%),
-        radial-gradient(circle at 85% 20%, rgba(255, 60, 172, 0.15), transparent 30%),
-        radial-gradient(circle at 50% 95%, rgba(57, 255, 136, 0.10), transparent 34%),
-        linear-gradient(180deg, #020617 0%, #07142e 58%, #14051f 100%);
-    }
-
-    .page {
-      width: 100%;
-      min-height: 100vh;
-      padding: 34px 22px 46px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .stars {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background-image:
-        radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1px),
-        radial-gradient(circle, rgba(0,229,255,0.6) 1px, transparent 1px),
-        radial-gradient(circle, rgba(255,60,172,0.45) 1px, transparent 1px);
-      background-size: 90px 90px, 140px 140px, 210px 210px;
-      background-position: 0 0, 40px 70px, 120px 40px;
-      opacity: 0.25;
-      animation: drift 18s linear infinite;
-    }
-
-    @keyframes drift {
-      from { transform: translateY(0); }
-      to { transform: translateY(90px); }
-    }
-
-    .hero {
-      max-width: 1180px;
-      margin: 0 auto 26px;
-      position: relative;
-      z-index: 1;
-      text-align: center;
-      padding: 34px 24px;
-      border-radius: 34px;
-      background: linear-gradient(180deg, rgba(8, 14, 34, 0.76), rgba(3, 5, 18, 0.72));
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      box-shadow:
-        0 0 32px rgba(0, 229, 255, 0.15),
-        0 0 64px rgba(255, 60, 172, 0.10),
-        0 28px 80px rgba(0, 0, 0, 0.32);
-      backdrop-filter: blur(8px);
-    }
-
-    .hero h1 {
-      font-size: clamp(46px, 7vw, 88px);
-      line-height: 0.96;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-bottom: 14px;
-      text-shadow:
-        0 0 12px rgba(255, 255, 255, 0.42),
-        0 0 30px rgba(0, 229, 255, 0.38),
-        0 0 58px rgba(255, 60, 172, 0.22);
-    }
-
-    .hero p {
-      max-width: 850px;
-      margin: 0 auto;
-      font-size: 18px;
-      line-height: 1.6;
-      color: #dbe6ff;
-      font-weight: 800;
-    }
-
-    .main-layout {
-      max-width: 1180px;
-      margin: 0 auto;
-      position: relative;
-      z-index: 1;
-      display: grid;
-      grid-template-columns: 390px 1fr;
-      gap: 22px;
-      align-items: start;
-    }
-
-    .panel {
-      border-radius: 28px;
-      background: linear-gradient(180deg, rgba(8, 14, 34, 0.84), rgba(3, 5, 18, 0.78));
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      box-shadow: 0 22px 60px rgba(0, 0, 0, 0.34);
-      backdrop-filter: blur(8px);
-      overflow: hidden;
-    }
-
-    .menu-panel {
-      padding: 20px;
-      position: sticky;
-      top: 18px;
-    }
-
-    .section-title {
-      font-size: 20px;
-      font-weight: 900;
-      margin-bottom: 14px;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .badge {
-      font-size: 12px;
-      color: #041226;
-      background: linear-gradient(135deg, #39ff88, #00e5ff);
-      border-radius: 999px;
-      padding: 7px 10px;
-      font-weight: 900;
-    }
-
-    .game-list {
-      display: grid;
-      gap: 12px;
-    }
-
-    .game-btn {
-      width: 100%;
-      min-height: 76px;
-      border: 1px solid rgba(255, 255, 255, 0.13);
-      border-radius: 18px;
-      cursor: pointer;
-      padding: 14px 15px;
-      text-align: left;
+        radial-gradient(circle at top, rgba(37, 99, 235, 0.25), transparent 35%),
+        linear-gradient(135deg, #020617, #0f172a, #111827);
       color: white;
-      background: linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.035));
-      box-shadow: 0 12px 24px rgba(0,0,0,0.22);
-      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+      min-height: 100vh;
     }
 
-    .game-btn:hover,
-    .game-btn.active {
-      transform: translateY(-2px);
-      border-color: rgba(0, 229, 255, 0.70);
-      box-shadow:
-        0 16px 28px rgba(0,0,0,0.26),
-        0 0 22px rgba(0, 229, 255, 0.16);
+    header {
+      text-align: center;
+      padding: 50px 20px 25px;
     }
 
-    .game-btn strong {
-      display: block;
+    header h1 {
+      margin: 0;
+      font-size: 48px;
+      color: #facc15;
+      text-shadow: 0 0 18px rgba(250, 204, 21, 0.4);
+    }
+
+    header p {
+      margin-top: 12px;
       font-size: 18px;
-      font-weight: 900;
-      margin-bottom: 6px;
-      color: #ffffff;
+      color: #d1d5db;
     }
 
-    .game-btn small {
-      display: block;
-      color: #cdd8ff;
-      font-size: 13px;
-      line-height: 1.35;
-      font-weight: 700;
+    .games-container {
+      max-width: 1250px;
+      margin: 20px auto 70px;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 26px;
     }
 
-    .viewer-panel {
-      min-height: 660px;
-      display: flex;
-      flex-direction: column;
+    .game-card {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(147, 197, 253, 0.28);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
     }
 
-    .viewer-top {
+    .game-card:hover {
+      transform: translateY(-8px);
+      border-color: rgba(250, 204, 21, 0.75);
+      box-shadow: 0 22px 55px rgba(37, 99, 235, 0.35);
+    }
+
+    .game-image {
+      height: 150px;
+      border-radius: 18px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 16px 18px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(0, 0, 0, 0.20);
+      justify-content: center;
+      font-size: 62px;
+      margin-bottom: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      box-shadow: inset 0 0 35px rgba(255, 255, 255, 0.06);
     }
 
-    .viewer-title strong {
-      display: block;
-      font-size: 18px;
-      font-weight: 900;
-      color: #ffffff;
+    .alien {
+      background: radial-gradient(circle, #22c55e, #064e3b, #020617);
     }
 
-    .viewer-title span {
-      display: block;
-      font-size: 13px;
-      color: #cdd8ff;
-      margin-top: 3px;
-      font-weight: 700;
+    .batball {
+      background: radial-gradient(circle, #f97316, #7c2d12, #020617);
     }
 
-    .tools {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .tool-btn {
-      height: 42px;
-      border: none;
-      border-radius: 13px;
-      padding: 0 14px;
-      cursor: pointer;
-      color: #041226;
-      background: linear-gradient(135deg, #39ff88, #00e5ff);
-      font-weight: 900;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.24);
-    }
-
-    .tool-btn.secondary {
-      background: linear-gradient(135deg, #ffffff, #dce9ff);
-    }
-
-    .game-frame-wrap {
-      position: relative;
-      flex: 1;
-      min-height: 590px;
+    .commando {
       background:
-        radial-gradient(circle at 30% 20%, rgba(0, 229, 255, 0.12), transparent 30%),
-        radial-gradient(circle at 70% 40%, rgba(255, 60, 172, 0.10), transparent 30%),
-        rgba(0,0,0,0.30);
+        radial-gradient(circle at 50% 60%, #22c55e 0%, #15803d 25%, transparent 26%),
+        radial-gradient(circle at 50% 72%, #eab308 0%, #b45309 30%, transparent 31%),
+        linear-gradient(160deg, #0ea5e9, #075985, #020617);
     }
 
-    iframe {
+    .fruit {
+      background:
+        radial-gradient(circle at 30% 30%, #ef4444, transparent 25%),
+        radial-gradient(circle at 70% 35%, #facc15, transparent 25%),
+        radial-gradient(circle at 50% 70%, #22c55e, transparent 25%),
+        linear-gradient(160deg, #4c1d95, #111827);
+    }
+
+    .inkspill {
+      background: radial-gradient(circle, #a855f7, #312e81, #020617);
+    }
+
+    .sky {
+      background: linear-gradient(160deg, #38bdf8, #2563eb, #020617);
+    }
+
+    .snake {
+      background: radial-gradient(circle, #84cc16, #166534, #020617);
+    }
+
+    .space {
+      background:
+        radial-gradient(circle at 30% 25%, #f8fafc 0%, transparent 8%),
+        radial-gradient(circle at 75% 30%, #60a5fa 0%, transparent 10%),
+        linear-gradient(160deg, #020617, #1e1b4b, #0f172a);
+    }
+
+    .tetris {
+      background:
+        linear-gradient(90deg, #ef4444 20%, #facc15 20% 40%, #22c55e 40% 60%, #3b82f6 60% 80%, #a855f7 80%);
+    }
+
+    .game-card h2 {
+      margin: 0 0 10px;
+      font-size: 24px;
+      color: #93c5fd;
+    }
+
+    .game-card p {
+      color: #d1d5db;
+      line-height: 1.5;
+      font-size: 15px;
+      min-height: 70px;
+    }
+
+    .play-button {
+      display: inline-block;
       width: 100%;
-      height: 100%;
-      min-height: 590px;
+      text-align: center;
+      text-decoration: none;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+      padding: 13px 18px;
+      border-radius: 14px;
+      font-weight: bold;
       border: none;
-      display: block;
-      background: #020617;
+      cursor: pointer;
+      transition: transform 0.22s ease, background 0.22s ease;
+      font-size: 15px;
     }
 
-    .empty-state {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      padding: 26px;
+    .play-button:hover {
+      transform: scale(1.04);
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+
+    footer {
       text-align: center;
-    }
-
-    .empty-card {
-      max-width: 560px;
-      padding: 34px 28px;
-      border-radius: 28px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.13);
-      box-shadow: 0 0 28px rgba(0, 229, 255, 0.10);
-    }
-
-    .empty-card h2 {
-      font-size: 34px;
-      margin-bottom: 12px;
-      text-shadow: 0 0 18px rgba(0, 229, 255, 0.25);
-    }
-
-    .empty-card p {
-      color: #dbe6ff;
-      font-weight: 800;
-      line-height: 1.55;
-    }
-
-    .footer {
-      max-width: 1180px;
-      margin: 26px auto 0;
-      position: relative;
-      z-index: 1;
-      text-align: center;
-      color: #cdd8ff;
-      font-weight: 800;
+      color: #9ca3af;
+      padding: 25px;
       font-size: 14px;
     }
 
-    @media (max-width: 980px) {
-      .main-layout {
-        grid-template-columns: 1fr;
-      }
-
-      .menu-panel {
-        position: static;
-      }
-
-      .game-list {
-        grid-template-columns: repeat(2, minmax(220px, 1fr));
-      }
+    #gameScreen {
+      display: none;
+      min-height: 100vh;
+      background: #020617;
     }
 
-    @media (max-width: 640px) {
-      .page {
-        padding: 18px 12px 30px;
-      }
+    .game-topbar {
+      height: 70px;
+      background: rgba(15, 23, 42, 0.98);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      border-bottom: 1px solid rgba(147, 197, 253, 0.25);
+    }
 
-      .hero {
-        padding: 28px 18px;
-      }
+    .game-topbar h2 {
+      margin: 0;
+      color: #facc15;
+      font-size: 22px;
+    }
 
-      .game-list {
-        grid-template-columns: 1fr;
-      }
+    .home-button {
+      background: linear-gradient(135deg, #dc2626, #991b1b);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 15px;
+    }
 
-      .viewer-top {
-        flex-direction: column;
-        align-items: stretch;
-      }
+    .home-button:hover {
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+    }
 
-      .tools {
-        justify-content: stretch;
-      }
+    .open-button {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 15px;
+      margin-left: 10px;
+    }
 
-      .tool-btn {
-        flex: 1;
-      }
+    .game-frame-wrap {
+      width: 100%;
+      height: calc(100vh - 70px);
+      background: black;
+    }
 
-      .game-frame-wrap,
-      iframe {
-        min-height: 520px;
-      }
+    #gameFrame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: black;
+      display: block;
+    }
+
+    .topbar-buttons {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
   </style>
 </head>
 
 <body>
-  <div class="stars"></div>
 
-  <main class="page">
-    <section class="hero">
+  <!-- HOME SCREEN -->
+  <section id="homeScreen">
+    <header>
       <h1>Vishal's Game Portfolio</h1>
-      <p>
-        Welcome to my HTML arcade portfolio. Pick a game, press play, and enjoy a collection of fun browser games with glowing effects, classic controls, and creative designs.
-      </p>
-    </section>
+      <p>Click a game below to play. You can return home and choose another game anytime.</p>
+    </header>
 
-    <section class="main-layout">
-      <aside class="panel menu-panel">
-        <div class="section-title">
-          <span>Game Menu</span>
-          <span class="badge">HTML Arcade</span>
-        </div>
+    <main class="games-container">
 
-        <div class="game-list">
-          <button class="game-btn" type="button" data-path="./Alien_shooter.html">
-            <strong>Alien Shooter</strong>
-            <small>Blast UFOs, survive enemy fire, and defeat the Level 5 mothership.</small>
-          </button>
+      <div class="game-card">
+        <div class="game-image alien">👽</div>
+        <h2>Alien Shooter</h2>
+        <p>Shoot aliens, survive waves, and protect yourself in this arcade-style alien battle game.</p>
+        <button class="play-button" onclick="openGame('Alien Shooter', 'Alien_shooter.html')">Play Game</button>
+      </div>
 
-          <button class="game-btn" type="button" data-path="./Batball.html">
-            <strong>BatBall</strong>
-            <small>Break all the bricks with a classic long white paddle.</small>
-          </button>
+      <div class="game-card">
+        <div class="game-image batball">🏏</div>
+        <h2>Batball</h2>
+        <p>A ball-and-bat style game where timing, movement, and reaction speed matter.</p>
+        <button class="play-button" onclick="openGame('Batball', 'Batball.html')">Play Game</button>
+      </div>
 
-          <button class="game-btn" type="button" data-path="./fruit_match3.html">
-            <strong>Fruit Match 3</strong>
-            <small>Swap colorful fruits, match sets, and score big combos.</small>
-          </button>
+      <div class="game-card">
+        <div class="game-image commando">🏝️</div>
+        <h2>Commando Island</h2>
+        <p>A side-scrolling island action game with weapons, enemies, bosses, and survival combat.</p>
+        <button class="play-button" onclick="openGame('Commando Island', 'cammando.html')">Play Game</button>
+      </div>
 
-          <button class="game-btn" type="button" data-path="./inkspill.html">
-            <strong>Ink Spill</strong>
-            <small>Play the colorful ink puzzle game and fill the board.</small>
-          </button>
+      <div class="game-card">
+        <div class="game-image fruit">🍎</div>
+        <h2>Fruit Match-3</h2>
+        <p>A fruit matching puzzle game with swapping, scoring, gravity, refilling, and game over detection.</p>
+        <button class="play-button" onclick="openGame('Fruit Match-3', 'fruit_match3.html')">Play Game</button>
+      </div>
 
-          <button class="game-btn" type="button" data-path="./sky_bounce.html">
-            <strong>Sky Bounce</strong>
-            <small>Tap to fly through crystal gates, collect coins, and beat your best score.</small>
-          </button>
+      <div class="game-card">
+        <div class="game-image inkspill">🎨</div>
+        <h2>Inkspill</h2>
+        <p>A colorful ink-style game with creative visuals and fast gameplay.</p>
+        <button class="play-button" onclick="openGame('Inkspill', 'inkspill.html')">Play Game</button>
+      </div>
 
-          <button class="game-btn" type="button" data-path="./snake.html">
-            <strong>Snake</strong>
-            <small>Control the snake, collect food, and grow longer without crashing.</small>
-          </button>
+      <div class="game-card">
+        <div class="game-image sky">☁️</div>
+        <h2>Sky Bounce</h2>
+        <p>A sky-themed bouncing game where the player avoids falling and keeps moving upward.</p>
+        <button class="play-button" onclick="openGame('Sky Bounce', 'sky_bounce.html')">Play Game</button>
+      </div>
 
-          <button class="game-btn" type="button" data-path="./space_del.html">
-            <strong>Space Delivery</strong>
-            <small>Deliver packages between planets, collect fuel, and dodge asteroids.</small>
-          </button>
+      <div class="game-card">
+        <div class="game-image snake">🐍</div>
+        <h2>Snake</h2>
+        <p>The classic snake game. Eat food, grow longer, and avoid crashing.</p>
+        <button class="play-button" onclick="openGame('Snake', 'snake.html')">Play Game</button>
+      </div>
 
-          <button class="game-btn" type="button" data-path="./tetris.html">
-            <strong>Tetris</strong>
-            <small>Stack glowing blocks, clear lines, and survive as the speed increases.</small>
-          </button>
-        </div>
-      </aside>
+      <div class="game-card">
+        <div class="game-image space">🚀</div>
+        <h2>Space Delivery</h2>
+        <p>A space-themed delivery game where you travel through space and complete missions.</p>
+        <button class="play-button" onclick="openGame('Space Delivery', 'space_del.html')">Play Game</button>
+      </div>
 
-      <section class="panel viewer-panel">
-        <div class="viewer-top">
-          <div class="viewer-title">
-            <strong id="currentGameTitle">Choose a Game</strong>
-            <span id="currentGameText">Select any game from the menu to load it here.</span>
-          </div>
+      <div class="game-card">
+        <div class="game-image tetris">🧱</div>
+        <h2>Tetris</h2>
+        <p>A block-stacking puzzle game where you clear lines and try to survive as long as possible.</p>
+        <button class="play-button" onclick="openGame('Tetris', 'tetris.html')">Play Game</button>
+      </div>
 
-          <div class="tools">
-            <button id="openBtn" class="tool-btn secondary" type="button">Open Tab</button>
-            <button id="fullBtn" class="tool-btn" type="button">Full Screen</button>
-          </div>
-        </div>
+    </main>
 
-        <div id="frameWrap" class="game-frame-wrap">
-          <div id="emptyState" class="empty-state">
-            <div class="empty-card">
-              <h2>Pick Your Game</h2>
-              <p>
-                Click one of the game buttons on the left. The game will load in this big player window. Use the Full Screen button for the best experience.
-              </p>
-            </div>
-          </div>
-
-          <iframe id="gameFrame" title="Game Player" src="about:blank" allowfullscreen></iframe>
-        </div>
-      </section>
-    </section>
-
-    <footer class="footer">
-      Built with HTML, CSS, and JavaScript • Game Portfolio
+    <footer>
+      <p>Created by Vishal Harbance</p>
     </footer>
-  </main>
+  </section>
+
+  <!-- GAME SCREEN -->
+  <section id="gameScreen">
+    <div class="game-topbar">
+      <h2 id="currentGameTitle">Game</h2>
+
+      <div class="topbar-buttons">
+        <button class="home-button" onclick="goHome()">Back to Game Library</button>
+        <button class="open-button" onclick="openFullPage()">Open Full Page</button>
+      </div>
+    </div>
+
+    <div class="game-frame-wrap">
+      <iframe id="gameFrame" src=""></iframe>
+    </div>
+  </section>
 
   <script>
-    const gameButtons = document.querySelectorAll(".game-btn");
-    const gameFrame = document.getElementById("gameFrame");
-    const frameWrap = document.getElementById("frameWrap");
-    const emptyState = document.getElementById("emptyState");
-    const currentGameTitle = document.getElementById("currentGameTitle");
-    const currentGameText = document.getElementById("currentGameText");
-    const fullBtn = document.getElementById("fullBtn");
-    const openBtn = document.getElementById("openBtn");
+    let currentGameFile = "";
 
-    let currentPath = "";
-    let currentTitle = "";
+    function openGame(title, file) {
+      currentGameFile = file;
 
-    function loadGame(button) {
-      currentPath = button.dataset.path;
-      currentTitle = button.querySelector("strong").textContent;
-      const description = button.querySelector("small").textContent;
+      document.getElementById("currentGameTitle").textContent = title;
+      document.getElementById("gameFrame").src = file;
 
-      gameButtons.forEach(btn => btn.classList.remove("active"));
-      button.classList.add("active");
-
-      gameFrame.src = currentPath;
-      emptyState.style.display = "none";
-      currentGameTitle.textContent = currentTitle;
-      currentGameText.textContent = description;
+      document.getElementById("homeScreen").style.display = "none";
+      document.getElementById("gameScreen").style.display = "block";
     }
 
-    gameButtons.forEach(button => {
-      button.addEventListener("click", () => loadGame(button));
-    });
+    function goHome() {
+      document.getElementById("gameFrame").src = "";
+      document.getElementById("gameScreen").style.display = "none";
+      document.getElementById("homeScreen").style.display = "block";
+      window.scrollTo(0, 0);
+    }
 
-    fullBtn.addEventListener("click", async () => {
-      if (!currentPath) {
-        alert("Choose a game first, then press Full Screen.");
-        return;
+    function openFullPage() {
+      if (currentGameFile !== "") {
+        window.open(currentGameFile, "_blank");
       }
-
-      try {
-        if (gameFrame.requestFullscreen) {
-          await gameFrame.requestFullscreen();
-        } else if (frameWrap.requestFullscreen) {
-          await frameWrap.requestFullscreen();
-        }
-      } catch (error) {
-        alert("Full screen was blocked. Open the game in a new tab instead.");
-      }
-    });
-
-    openBtn.addEventListener("click", () => {
-      if (!currentPath) {
-        alert("Choose a game first, then press Open Tab.");
-        return;
-      }
-
-      window.open(currentPath, "_blank");
-    });
+    }
   </script>
+
 </body>
 </html>
